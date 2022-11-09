@@ -1,0 +1,3 @@
+__attribute__((noreturn)) void _start(void) {
+  while (1);
+}
