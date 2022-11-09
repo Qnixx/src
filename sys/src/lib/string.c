@@ -20,7 +20,7 @@ bool kmemcmp(const char* str1, const char* str2, size_t n) {
     return true;
 }
 
-char* dec2str(int number) {
+char* dec2str(size_t number) {
     static uint8_t dec_string[80];
     uint8_t i = 0, j, temp;
     uint8_t negative = 0;       // Is number negative?

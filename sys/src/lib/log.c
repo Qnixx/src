@@ -52,8 +52,10 @@ void printk(const char* fmt, ...) {
   
   if (do_video_logging)
     console_write(fmt, ptr);
+  
+  va_end(ptr);
 
+  va_start(ptr, fmt);
   serial_log(fmt, ptr);
-
   va_end(ptr);
 }
