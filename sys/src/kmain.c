@@ -3,6 +3,6 @@
 
 __attribute__((noreturn)) void _start(void) { 
   framebuffer_init();
-  printk("Hello, World!\n");
+
   while (1);
 }

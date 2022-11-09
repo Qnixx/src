@@ -11,9 +11,12 @@ static uint32_t x = 0, y = 0;
 static void newline(void) {
   if (y >= framebuffer_get_height() - 5) {
     framebuffer_clear(0x000000);
+    y = 0;
+    x = 0;
+    return;
   }
 
-  y = 0;
+  y += FONT_HEIGHT+4;
   x = 0;
 }
 
