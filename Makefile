@@ -29,7 +29,7 @@ link:
 
 .PHONY: cfiles
 cfiles: $(CFILES)
-	gcc $(CFLAGS) -c $^ -Isys/include/
+	gcc -march=x86-64 $(CFLAGS) -c $^ -Isys/include/
 
 limine:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v4.0-binary --depth=1
@@ -42,6 +42,10 @@ debug_kvm:
 .PHONY:
 run:
 	qemu-system-x86_64 --enable-kvm -cpu qemu64 -M q35 -m 3G -drive file=Qnixx.iso,format=raw -boot d -smp 4 -rtc base=localtime -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0 -serial stdio
+
+.PHONY: toolchain
+toolchain:
+	bash tools/cross.sh
 
 .PHONY:
 cleanup:
