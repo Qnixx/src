@@ -4,6 +4,9 @@
 #include <lib/string.h>
 
 
+static uint8_t do_video_logging = 1;
+
+
 static void serial_log(const char* fmt, va_list ap) {
   if (*fmt == '\\') {
     fmt += 2;
@@ -33,12 +36,23 @@ static void serial_log(const char* fmt, va_list ap) {
   }
 }
 
+void disable_video_logging(void) {
+  do_video_logging = 0;
+}
+
+
+void enable_video_logging(void) {
+  do_video_logging = 1;
+}
+
 
 void printk(const char* fmt, ...) {
   va_list ptr;
   va_start(ptr, fmt);
+  
+  if (do_video_logging)
+    console_write(fmt, ptr);
 
-  console_write(fmt, ptr);
   serial_log(fmt, ptr);
 
   va_end(ptr);
