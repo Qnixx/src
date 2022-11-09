@@ -6,6 +6,9 @@ CFLAGS = -fexceptions -std=gnu11 -ffreestanding -fno-stack-protector \
   -mabi=sysv -mno-80387 -mno-mmx \
   -mno-3dnow -mno-sse -mno-sse2 -mno-red-zone -mcmodel=kernel
 
+CC = cross/bin/x86_64-elf-gcc
+LD = cross/bin/x86_64-elf-ld
+
 
 .PHONY: all
 all: cfiles link limine cleanup
@@ -25,11 +28,11 @@ all: cfiles link limine cleanup
 
 .PHONY: link
 link:
-	ld *.o -nostdlib -zmax-page-size=0x1000 -static -Tsys/link.ld -o sys/kernel.sys
+	$(LD) *.o -nostdlib -zmax-page-size=0x1000 -static -Tsys/link.ld -o sys/kernel.sys
 
 .PHONY: cfiles
 cfiles: $(CFILES)
-	gcc -march=x86-64 $(CFLAGS) -c $^ -Isys/include/
+	$(CC) -march=x86-64 $(CFLAGS) -c $^ -Isys/include/
 
 limine:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v4.0-binary --depth=1

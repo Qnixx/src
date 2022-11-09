@@ -2,3 +2,5 @@
 *.iso
 limine/
 *.sys
+buildcc/
+cross/
