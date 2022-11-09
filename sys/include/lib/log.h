@@ -22,4 +22,10 @@ void disable_video_logging(void);
 void enable_video_logging(void);
 
 
+#define PRINTK_SERIAL(fmt, ...)     \
+  disable_video_logging();          \
+  printk(fmt, __VA_ARGS__);         \
+  enable_video_logging();
+
+
 #endif

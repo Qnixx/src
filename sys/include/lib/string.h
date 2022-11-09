@@ -5,7 +5,7 @@
 
 size_t kstrlen(const char* str);
 bool kmemcmp(const char* str1, const char* str2, size_t n);
-char* dec2str(int dec);
+char* dec2str(size_t dec);
 uint8_t* kstrncpy(uint8_t* dst, const uint8_t* src, const uint8_t len);
 void kmemcpy(void* dst, const void* src, size_t len);
 uint8_t* hex2str(uint64_t hex_num);
