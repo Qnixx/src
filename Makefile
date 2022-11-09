@@ -23,7 +23,7 @@ link:
 
 .PHONY: cfiles
 cfiles: $(CFILES)
-	gcc -c $^
+	gcc -c $^ -Isys/include/
 
 limine:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v4.0-binary --depth=1
