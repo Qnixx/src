@@ -1,5 +1,6 @@
 #include <arch/bus/pci.h>
 #include <arch/x86/io.h>
+#include <lib/log.h>
 
 #define CONFIG_ADDR 0xCF8
 #define CONFIG_DATA 0xCFC
@@ -23,12 +24,12 @@ static inline uint8_t read_irq_line(uint8_t bus, uint8_t slot, uint8_t func) {
 }
 
 
-static inline uint8_t pci_read_vendor(uint8_t bus, uint8_t slot, uint8_t func) {
+static inline uint16_t pci_read_vendor(uint8_t bus, uint8_t slot, uint8_t func) {
   return pci_config_read(bus, slot, func, 0x0);
 }
 
 
-static inline uint8_t pci_read_devid(uint8_t bus, uint8_t slot, uint8_t func) {
+static inline uint16_t pci_read_devid(uint8_t bus, uint8_t slot, uint8_t func) {
   return pci_config_read(bus, slot, func, 0x2);
 }
 
@@ -49,12 +50,14 @@ pci_device_t pci_find(unsigned int vendor_id, unsigned int device_id) {
           dev.irq_line = read_irq_line(bus, slot, func);
           dev.valid = 1;
           dev.bar0 = get_bar0(bus, slot, func);
+          dev.bus = bus;
+          dev.slot = slot;
           return dev;
         }
       }
     }
   }
-
+  
   dev.valid = 0;
   return dev;
 }

@@ -10,6 +10,8 @@ typedef struct {
   uint8_t irq_line;
   uint8_t valid : 1;
   uint32_t bar0;
+  uint8_t bus;
+  uint8_t slot;
 } pci_device_t;
 
 
