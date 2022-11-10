@@ -6,8 +6,8 @@ CFLAGS = -fexceptions -std=gnu11 -ffreestanding -fno-stack-protector \
   -mabi=sysv -mno-80387 -mno-mmx \
   -mno-3dnow -mno-sse -mno-sse2 -mno-red-zone -mcmodel=kernel
 
-CC = x86_64-elf-gcc
-LD = x86_64-elf-ld
+CC = cross/bin/x86_64-elf-gcc
+LD = cross/bin/x86_64-elf-ld
 
 
 .PHONY: all
