@@ -1,13 +1,13 @@
 CFILES = $(shell find sys/src/ -name "*.c")
 CFLAGS = -fexceptions -std=gnu11 -ffreestanding -fno-stack-protector \
   -fno-pic -Werror=implicit -Werror=implicit-function-declaration -Werror=implicit-int \
-  -Werror=int-conversion \
+  -Werror=int-conversion -Wno-format \
   -Werror=incompatible-pointer-types -Werror=int-to-pointer-cast -Werror=return-type -Wunused \
   -mabi=sysv -mno-80387 -mno-mmx \
   -mno-3dnow -mno-sse -mno-sse2 -mno-red-zone -mcmodel=kernel
 
-CC = cross/bin/x86_64-elf-gcc
-LD = cross/bin/x86_64-elf-ld
+CC = x86_64-elf-gcc
+LD = x86_64-elf-ld
 
 
 .PHONY: all
