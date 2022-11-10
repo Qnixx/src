@@ -40,23 +40,21 @@ static inline uint32_t get_bar0(uint8_t bus, uint8_t slot, uint8_t func) {
 
 
 pci_device_t pci_find(unsigned int vendor_id, unsigned int device_id) {
+  pci_device_t dev;
+
   for (uint8_t bus = 0; bus < 5; ++bus) {
     for (uint8_t slot = 0; slot < 32; ++slot) {
       for (uint8_t func = 0; func < 8; ++func) {
         if (pci_read_devid(bus, slot, func) == device_id && pci_read_vendor(bus, slot, func) == vendor_id) {
-          pci_device_t dev = {
-            .irq_line = read_irq_line(bus, slot, func),
-            .valid = 1,
-            .bar0 = get_bar0(bus, slot, func)
-          };
-
+          dev.irq_line = read_irq_line(bus, slot, func);
+          dev.valid = 1;
+          dev.bar0 = get_bar0(bus, slot, func);
           return dev;
         }
       }
     }
   }
 
-  pci_device_t dev;
   dev.valid = 0;
   return dev;
 }
