@@ -1,7 +1,7 @@
 CFILES = $(shell find sys/src/ -name "*.c")
 CFLAGS = -fexceptions -std=gnu11 -ffreestanding -fno-stack-protector \
   -fno-pic -Werror=implicit -Werror=implicit-function-declaration -Werror=implicit-int \
-  -Werror=int-conversion -Wno-format \
+  -Werror=int-conversion \
   -Werror=incompatible-pointer-types -Werror=int-to-pointer-cast -Werror=return-type -Wunused \
   -mabi=sysv -mno-80387 -mno-mmx \
   -mno-3dnow -mno-sse -mno-sse2 -mno-red-zone -mcmodel=kernel
