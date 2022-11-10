@@ -11,7 +11,7 @@ LD = cross/bin/x86_64-elf-ld
 
 
 .PHONY: all
-all: cfiles taufiles link limine TauLang cleanup
+all: TauLang cfiles taufiles link limine cleanup
 	mkdir -p iso_root
 	mkdir -p iso_root/Qnixx
 	cp etc/limine.cfg \
