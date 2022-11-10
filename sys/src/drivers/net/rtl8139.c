@@ -157,13 +157,7 @@ void rtl8139_init(void) {
   } else {
     PRINTK_SERIAL("[%s]: Link down.\n", MODULE_NAME);
   }
-  
-  char buf[10] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
   register_int(0x20 + dev.irq_line, isr);
   pic_enable(dev.irq_line);
-  ASMV("sti");
-  
-  rtl8139_send_packet(buf, sizeof(buf));
-  PRINTK_SERIAL("[%s]: Sent test packets!\n", MODULE_NAME);
 }

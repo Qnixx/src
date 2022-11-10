@@ -38,6 +38,7 @@ __attribute__((noreturn)) void _start(void) {
   pic_init();
 
   init_drivers();
+  ASMV("sti"); 
 
   while (1);
 }
