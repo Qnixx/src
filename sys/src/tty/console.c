@@ -43,6 +43,8 @@ void console_write(const char* fmt, va_list ap) {
   if (*fmt == '\\') {
     switch (*(fmt + 1)) {
       case '1':
+        color = MAKE_FG_BG(0xD22B2B, 0x000000);
+        fmt += 2;
         break;
     }
   }

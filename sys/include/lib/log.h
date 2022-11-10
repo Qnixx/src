@@ -3,6 +3,8 @@
 
 #include <stdarg.h>
 
+#define PRINTK_PANIC "\\1kpanic: "
+
 
 void printk(const char* fmt, ...);
 

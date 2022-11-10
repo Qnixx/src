@@ -8,7 +8,15 @@ static uint8_t do_video_logging = 1;
 
 
 static void serial_log(const char* fmt, va_list ap) {
+  uint8_t has_color = 0;
+
   if (*fmt == '\\') {
+    switch (*(fmt + 1)) {
+      case '1':
+        serial_write("\e[0;31m");
+        has_color = 1;
+        break;
+    }
     fmt += 2;
   }
 
@@ -33,6 +41,10 @@ static void serial_log(const char* fmt, va_list ap) {
     } else {
       serial_write((char[2]){*ptr, 0});
     }
+  }
+
+  if (has_color) {
+    serial_write("\e[0m");
   }
 }
 
