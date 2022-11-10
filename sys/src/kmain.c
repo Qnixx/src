@@ -5,11 +5,13 @@
 #include <mm/pmm.h>
 #include <arch/x64/idt.h>
 #include <intr/intr.h>
+#include <mm/heap.h>
 
 MODULE("kmain");
 
 static void init_mm(void) {
   pmm_init();
+  heap_init();
   printk("[%s]: Memory managers initialized.\n", MODULE_NAME);
 }
 
