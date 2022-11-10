@@ -43,5 +43,5 @@ void register_exception_handler(uint8_t vector, void* isr) {
 
 void load_idt(void) {
   ASMV("lidt %0" :: "m" (idtr));
-  PRINTK_SERIAL("[%s]: Interrupt Descriptor Table loaded at %x with limit %x\n", MODULE_NAME, idtr.base, idtr.limit);
+  PRINTK_SERIAL("[%s]: Interrupt Descriptor Table loaded @%x with limit %x\n", MODULE_NAME, idtr.base, idtr.limit);
 }

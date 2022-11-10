@@ -57,11 +57,11 @@ static void find_highest(void) {
   for (size_t i = 0; i < resp->entry_count; ++i) {
     if (resp->entries[i]->type == LIMINE_MEMMAP_USABLE && resp->entries[i]->base > used_mmap_entry->base && resp->entries[i]->length > 0) {
       used_mmap_entry = resp->entries[i];
-      PRINTK_SERIAL("[%s]: Got better chunk at %x\n", MODULE_NAME, used_mmap_entry->base);
+      PRINTK_SERIAL("[%s]: Got better chunk @%x\n", MODULE_NAME, used_mmap_entry->base);
     }
   }
 
-  PRINTK_SERIAL("[%s]: Highest chunk located at %x\n", MODULE_NAME, used_mmap_entry->base);
+  PRINTK_SERIAL("[%s]: Highest chunk located @%x\n", MODULE_NAME, used_mmap_entry->base);
 }
 
 
@@ -114,7 +114,7 @@ static void init_bitmap(void) {
     }
   }
 
-  PRINTK_SERIAL("[%s]: Bitmap is at address %x\n", MODULE_NAME, bitmap);
+  PRINTK_SERIAL("[%s]: Bitmap @%x\n", MODULE_NAME, bitmap);
 }
 
 
