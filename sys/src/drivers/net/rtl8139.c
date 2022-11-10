@@ -1,9 +1,13 @@
 #include <drivers/net/rtl8139.h>
 #include <arch/bus/pci.h>
 #include <arch/x86/io.h>
+#include <arch/x64/idt.h>
+#include <intr/pic.h>
 #include <lib/module.h>
 #include <lib/log.h>
 #include <mm/vmm.h>
+#include <lib/string.h>
+#include <intr/pic.h>
 
 MODULE("rtl8139");
 
@@ -20,7 +24,10 @@ MODULE("rtl8139");
 
 static uint32_t iobase = 0;
 static uint8_t rxbuf[RX_BUFFER_SIZE];
-static uint8_t txbuf[TX_BUFFER_SIZE];
+// static uint8_t txbuf[TX_BUFFER_SIZE];
+static uint8_t txbufs[TX_BUFFER_SIZE][TX_BUFFER_COUNT];
+static size_t next_txbuf = 0;
+static pci_device_t dev;
 
 
 static inline uint8_t link_up(void) {
@@ -33,10 +40,44 @@ static inline uint8_t get_speed(void) {
   return msr & MSR_SPEED_10 ? 10 : 100;
 }
 
+__attribute__((interrupt)) static void isr(void* stackframe) {
+  for(;;) {
+    printk("AAA\n");
+    uint16_t status = inw(iobase + REG_ISR);
+    outw(iobase + REG_ISR, status);
+
+    if  ((status & (INT_RXOK | INT_RXERR | INT_TXOK | INT_TXERR | INT_RX_BUFFER_OVERFLOW | INT_LINK_CHANGE | INT_RX_FIFO_OVERFLOW | INT_LENGTH_CHANGE | INT_SYSTEM_ERROR)) == 0) break;
+    pic_EOI(dev.irq_line);
+  }
+}
+
+
+void rtl8139_send_packet(void* data, size_t size) { 
+  if (iobase == 0)
+    return;
+  
+  ssize_t hwbuf = -1;
+
+  for (unsigned int i = 0; i < TX_BUFFER_COUNT; ++i) {
+    size_t canidate = (next_txbuf + i) % 4;
+    uint32_t status = inl(iobase + REG_TXSTATUS0 + (canidate * 4));
+
+    if (status & TX_STATUS_OWN) {
+      hwbuf = canidate;
+      break;
+    }
+  }
+
+  next_txbuf = (hwbuf + 1) % 4;
+  kmemcpy(txbufs[hwbuf], data, size);
+  kmemzero(txbufs[hwbuf], TX_BUFFER_SIZE - size);
+  outl(iobase + REG_TXSTATUS0 + (hwbuf * 4), size);
+}
+
 
 void rtl8139_init(void) {
   PRINTK_SERIAL("[%s]: Checking the existance of a RTL8139 card..\n", MODULE_NAME);
-  pci_device_t dev = pci_find(VENDOR_ID, DEVICE_ID);
+  dev = pci_find(VENDOR_ID, DEVICE_ID);
 
   if (!(dev.valid)) {
     PRINTK_SERIAL("[%s]: No RTL8139 card attached!\n", MODULE_NAME);
@@ -117,4 +158,13 @@ void rtl8139_init(void) {
   } else {
     PRINTK_SERIAL("[%s]: Link down.\n", MODULE_NAME);
   }
+  
+  char buf[10] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+  register_int(0x20 + dev.irq_line, isr);
+  pic_enable(dev.irq_line);
+  ASMV("sti");
+  
+  rtl8139_send_packet(buf, sizeof(buf));
+  PRINTK_SERIAL("[%s]: Sent test packets!\n", MODULE_NAME);
 }

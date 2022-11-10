@@ -7,6 +7,7 @@
 #include <intr/intr.h>
 #include <drivers/net/rtl8139.h>      // TODO: Move.
 #include <mm/heap.h>
+#include <intr/pic.h>
 
 MODULE("kmain");
 
@@ -33,6 +34,8 @@ __attribute__((noreturn)) void _start(void) {
 
   init_interrupts();
   printk("[%s]: Interrupts initialized.\n", MODULE_NAME);
+
+  pic_init();
 
   init_drivers();
 

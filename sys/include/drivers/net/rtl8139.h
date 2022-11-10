@@ -1,6 +1,8 @@
 #ifndef RTL8139_H_
 #define RTL8139_H_
 
+#include <lib/types.h>
+
 /*
  *  RealTek 8139 Driver.
  */
@@ -104,5 +106,6 @@
 
 
 void rtl8139_init(void);
+void rtl8139_send_packet(void* data, size_t size);
 
 #endif
