@@ -42,7 +42,6 @@ static inline uint8_t get_speed(void) {
 
 __attribute__((interrupt)) static void isr(void* stackframe) {
   for(;;) {
-    printk("AAA\n");
     uint16_t status = inw(iobase + REG_ISR);
     outw(iobase + REG_ISR, status);
 
