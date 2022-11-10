@@ -11,7 +11,7 @@ LD = cross/bin/x86_64-elf-ld
 
 
 .PHONY: all
-all: cfiles link limine cleanup
+all: cfiles taufiles link limine TauLang cleanup
 	mkdir -p iso_root
 	mkdir -p iso_root/Qnixx
 	cp etc/limine.cfg \
@@ -28,15 +28,24 @@ all: cfiles link limine cleanup
 
 .PHONY: link
 link:
+	mv $(shell find sys/src/ -name "*.o") ./
 	$(LD) *.o -nostdlib -zmax-page-size=0x1000 -static -Tsys/link.ld -o sys/kernel.sys
 
 .PHONY: cfiles
 cfiles: $(CFILES)
 	$(CC) -march=x86-64 $(CFLAGS) -c $^ -Isys/include/
 
+.PHONY: taufiles
+taufiles:
+	for source in $$(find sys/src/ -name "*.tau"); do	tau -i $$source -c -o "$$source.o"; done
+
 limine:
 	git clone https://github.com/limine-bootloader/limine.git --branch=v4.0-binary --depth=1
 	make -C limine
+
+TauLang: 
+	git clone https://github.com/Ian-Marco-Moffett/TauLang
+	cd TauLang; make; make install_linux
 
 .PHONY: debug_kvm
 debug_kvm:

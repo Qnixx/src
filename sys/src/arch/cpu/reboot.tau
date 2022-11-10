@@ -1,0 +1,5 @@
+extern outb(u8 port, u8 data) -> none;
+
+global reboot() -> none {
+  outb(100, 254);
+}
