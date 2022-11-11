@@ -53,6 +53,7 @@ debug_kvm:
 
 .PHONY:
 run:
+	bash tools/init_tap.sh
 	qemu-system-x86_64 --enable-kvm -cpu qemu64 -M q35 -m 3G -drive file=Qnixx.iso,format=raw -boot d -smp 4 -rtc base=localtime -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0 -serial stdio -netdev tap,id=mynet0,ifname=tap0,script=no,downscript=no -device rtl8139,netdev=mynet0,mac=52:55:00:d1:55:01
 
 .PHONY: toolchain
