@@ -242,7 +242,7 @@ void rtl8139_init(void) {
   outl(iobase + REG_RXCFG, RXCFG_APM | RXCFG_AM | RXCFG_AB | RXCFG_WRAP_INHIBIT | RXCFG_MAX_DMA_UNLIMITED | RXCFG_RBLN_32K | RXCFG_FTH_NONE);
 
   /*
-   *  Enable Receive and Transmitter.
+   *  Enable Receive and Transmit.
    *
    */
 
