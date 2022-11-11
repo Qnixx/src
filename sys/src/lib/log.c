@@ -31,6 +31,9 @@ static void serial_log(const char* fmt, va_list ap) {
         case 'x':
           serial_write(hex2str(va_arg(ap, uint64_t)));
           break;
+        case 'X':
+          serial_write(hex2str(va_arg(ap, uint64_t)) + 2);
+          break;
         case 's':
           serial_write(va_arg(ap, char*));
           break;

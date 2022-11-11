@@ -59,6 +59,9 @@ void console_write(const char* fmt, va_list ap) {
         case 'x':
           putstr(hex2str(va_arg(ap, uint64_t)), color);
           break;
+        case 'X':
+          putstr(hex2str(va_arg(ap, uint64_t)) + 2, color);
+          break;
         case 's':
           putstr(va_arg(ap, char*), color);
           break;

@@ -1,6 +1,7 @@
 #include <drivers/video/framebuffer.h>
 #include <drivers/serial.h>
 #include <lib/log.h>
+#include <lib/string.h>
 #include <lib/module.h>
 #include <mm/pmm.h>
 #include <arch/x64/idt.h>
@@ -43,6 +44,10 @@ __attribute__((noreturn)) void _start(void) {
 
   init_drivers();
   ASMV("sti"); 
+  
+  uint32_t buf[100]; 
+  kmemset(buf, 0xAE, sizeof(buf));
+  rtl8139_send_packet(buf, sizeof(buf)); 
 
   while (1);
 }
