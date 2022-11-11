@@ -28,5 +28,6 @@ struct idtr {
 void load_idt(void);
 void register_int(uint8_t vector, void* isr);
 void register_exception_handler(uint8_t vector, void* isr);
+void register_irq(uint8_t irq, void* isr, uint64_t extra_redentry_data);
 
 #endif

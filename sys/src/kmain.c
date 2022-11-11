@@ -4,10 +4,12 @@
 #include <lib/module.h>
 #include <mm/pmm.h>
 #include <arch/x64/idt.h>
+#include <arch/x86/apic/lapic.h>
+#include <arch/x86/apic/ioapic.h>
 #include <intr/intr.h>
 #include <drivers/net/rtl8139.h>      // TODO: Move.
 #include <mm/heap.h>
-#include <intr/pic.h>
+#include <firmware/acpi/acpi.h>
 
 MODULE("kmain");
 
@@ -34,8 +36,10 @@ __attribute__((noreturn)) void _start(void) {
 
   init_interrupts();
   printk("[%s]: Interrupts initialized.\n", MODULE_NAME);
+  acpi_init();
+  lapic_init();
 
-  pic_init();
+  ioapic_init();
 
   init_drivers();
   ASMV("sti"); 

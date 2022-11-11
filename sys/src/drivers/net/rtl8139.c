@@ -1,13 +1,12 @@
 #include <drivers/net/rtl8139.h>
 #include <arch/bus/pci.h>
 #include <arch/x86/io.h>
+#include <arch/x86/apic/lapic.h>
 #include <arch/x64/idt.h>
-#include <intr/pic.h>
 #include <lib/module.h>
 #include <lib/log.h>
 #include <mm/vmm.h>
 #include <lib/string.h>
-#include <intr/pic.h>
 
 MODULE("rtl8139");
 
@@ -46,7 +45,7 @@ __attribute__((interrupt)) static void isr(void* stackframe) {
     outw(iobase + REG_ISR, status);
 
     if  ((status & (INT_RXOK | INT_RXERR | INT_TXOK | INT_TXERR | INT_RX_BUFFER_OVERFLOW | INT_LINK_CHANGE | INT_RX_FIFO_OVERFLOW | INT_LENGTH_CHANGE | INT_SYSTEM_ERROR)) == 0) break;
-    pic_EOI(dev.irq_line);
+    lapic_send_eoi();
   }
 }
 
@@ -158,6 +157,5 @@ void rtl8139_init(void) {
     PRINTK_SERIAL("[%s]: Link down.\n", MODULE_NAME);
   }
 
-  register_int(0x20 + dev.irq_line, isr);
-  pic_enable(dev.irq_line);
+  register_irq(dev.irq_line, isr, 0);
 }

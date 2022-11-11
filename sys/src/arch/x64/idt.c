@@ -1,4 +1,6 @@
 #include <arch/x64/idt.h>
+#include <arch/x86/apic/ioapic.h>
+#include <firmware/acpi/acpi.h>
 #include <lib/asm.h>
 #include <lib/log.h>
 #include <lib/module.h>
@@ -39,6 +41,11 @@ void register_int(uint8_t vector, void* isr) {
 
 void register_exception_handler(uint8_t vector, void* isr) {
   set_desc(vector, isr, TRAP_GATE_FLAGS);
+}
+
+void register_irq(uint8_t irq, void* isr, uint64_t extra_redentry_data) {
+  register_int(0x20 + irq, isr);
+  ioapic_set_entry(acpi_remap_irq(irq), (0x20 + irq) | extra_redentry_data);
 }
 
 void load_idt(void) {
