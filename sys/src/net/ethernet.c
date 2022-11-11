@@ -4,6 +4,7 @@
 #include <lib/string.h>
 #include <mm/heap.h>
 #include <lib/log.h>
+#include <lib/math.h>
 
 MODULE("ethernet");
 
@@ -11,8 +12,6 @@ MODULE("ethernet");
  *  Ethernet Driver.
  *
  */
-
-#define BIG_ENDIAN(v) ((((v) & 0xFF) << 8) | (((v) >> 8) & 0xFF))
 
 void ethernet_send(mac_address_t dest, uint8_t* data, int length) {
 	int size = length + sizeof(ethernet_header_t);
@@ -25,4 +24,5 @@ void ethernet_send(mac_address_t dest, uint8_t* data, int length) {
 
 	kmemcpy(hdr->payload, data, length);
 	rtl8139_send_packet((uint8_t*)hdr, size);
+  kfree(hdr);
 }

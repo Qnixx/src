@@ -8,7 +8,7 @@
 #include <arch/x86/apic/lapic.h>
 #include <arch/x86/apic/ioapic.h>
 #include <intr/intr.h>
-#include <net/ethernet.h>
+#include <net/arp.h>
 #include <drivers/net/rtl8139.h>
 #include <mm/heap.h>
 #include <firmware/acpi/acpi.h>
@@ -46,9 +46,8 @@ __attribute__((noreturn)) void _start(void) {
   init_drivers();
   ASMV("sti");
   
-  uint8_t buf[100];
-  kmemset(buf, 0xAE, sizeof(buf));
-  ethernet_send(NULL, buf, sizeof(buf)); 
+  // 192.168.1.152
+  arp_send(IPv4(192, 168, 1, 152));
 
   while (1);
 }

@@ -14,7 +14,7 @@ typedef uint32_t ipv4_address_t;
 // Standard protocol id values used in many different structures
 typedef enum {
 	ETHERTYPE_ARP  = 0x0806,
-	ETHERYYPE_IPV4 = 0x0800,
+	ETHERTYPE_IPV4 = 0x0800,
 	ETHERTYPE_IPV6 = 0x86DD
 } ethertype_t;
 
