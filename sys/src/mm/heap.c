@@ -25,7 +25,8 @@ void* kmalloc(size_t size) {
       printk(PRINTK_PANIC "Failed to allocate a new heap page\n");
       return NULL;
     }
-	total_size += 0x1000;
+	  total_size += 0x1000;
+    PRINTK_SERIAL("[%s]: Allocated new heap page.\n", MODULE_NAME);
   }
 
   heapblk_t* region = first_fit(size);
@@ -41,7 +42,20 @@ void* kmalloc(size_t size) {
   }
 
   bytes_allocated += size;
+  PRINTK_SERIAL("[%s]: Allocated %d bytes, now %dKiB used.\n", MODULE_NAME, region->size, bytes_allocated / 1024);
   return DATA_START(region);
+}
+
+void kfree(void* ptr) {
+  heapblk_t* region = ptr - sizeof(heapblk_t);
+
+  for (heapblk_t* block = region; (block != NULL) && (DATA_START(block) != ptr); block = block->next) {
+    block->type = HEAPBLK_FREE;
+  }
+
+  heap_tail = region;
+  bytes_allocated -= region->size;
+  PRINTK_SERIAL("[%s]: Freed %d bytes, now %dKiB used.\n", MODULE_NAME, region->size, bytes_allocated / 1024);
 }
 
 void heap_init(void) {

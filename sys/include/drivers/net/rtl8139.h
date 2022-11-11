@@ -2,6 +2,7 @@
 #define RTL8139_H_
 
 #include <lib/types.h>
+#include <net/ethernet.h>
 
 /*
  *  RealTek 8139 Driver.
@@ -104,11 +105,10 @@
 #define TX_STATUS_OWN           0x2000
 #define TX_STATUS_THRESHOLD_MAX 0x3F0000
 
+extern mac_address_t rtl8139_mac_addr;
+
 
 void rtl8139_init(void);
 void rtl8139_send_packet(void* data, size_t size);
-
-// 6 bytes.
-uint8_t* rtl8139_get_mac_addr(void);
 
 #endif
