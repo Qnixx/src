@@ -50,4 +50,6 @@ void arp_send(ipv4_address_t target_paddr) {
           pkt->sender_haddr[0], pkt->sender_haddr[1], pkt->sender_haddr[2], pkt->sender_haddr[3], pkt->sender_haddr[4], pkt->sender_haddr[5]);
     }
   }
+
+  kfree(packet);
 }
