@@ -26,9 +26,11 @@ void arp_send(ipv4_address_t target_paddr) {
   kmemset(packet->target_haddr, 0xFF, sizeof(mac_address_t));
   packet->sender_paddr = IPv4(0, 0, 0, 0);
   
+  // Copy the network cards MAC address into the packet sender_haddr field.
   kmemcpy(packet->sender_haddr, rtl8139_mac_addr, sizeof(mac_address_t));
   packet->target_paddr = target_paddr;
-
+  
+  // Send it off!
   ethernet_send(packet->target_haddr, (uint8_t*)packet, sizeof(arp_packet_t));
 
   ssize_t spin = 10000000;
