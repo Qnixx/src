@@ -57,7 +57,11 @@ __attribute__((interrupt)) static void isr(void* stackframe) {
 
     if (status & INT_RXOK) {
       PRINTK_SERIAL("[%s]: RX ready\n", MODULE_NAME);
-    } 
+    }
+
+    if (status & INT_RXERR) {
+      PRINTK_SERIAL("[%s]: RX error.\n", MODULE_NAME);
+    }
 
     if (status & INT_TXOK) {
       PRINTK_SERIAL("[%s]: TX complete\n", MODULE_NAME);
@@ -72,6 +76,7 @@ __attribute__((interrupt)) static void isr(void* stackframe) {
     } 
   }
 
+  outw(iobase + REG_ISR, 0x5);
   lapic_send_eoi();
 }
 
@@ -112,81 +117,79 @@ void rtl8139_init(void) {
   }
 
   printk("[%s]: RTL8139 card is attached on PCI bus %d, slot %d\n", MODULE_NAME, dev.bus, dev.slot);
+  
+  // Enable bus mastering.
   enable_bus_mastering(dev);
   printk("[%s]: Bus mastering enabled for the NIC.\n", MODULE_NAME);
 
-  /*
-   *  Fetch I/O base.
-   */
-
-  iobase = dev.bar0 & 0xFFFFFFFc;
+  // Fetch the I/O base.
+  iobase = dev.bar0 & 0xFFFFFFFC;
   PRINTK_SERIAL("[%s]: Card has I/O base @%x\n", MODULE_NAME, iobase);
 
-  /*
-   *  Now we have to turn on the
-   *  card.
-   *
-   *  This can be done by sending a null byte
-   *  to CONFIG1.
-   */
-
-  outb(iobase + REG_CONFIG1, 0x00);
-  printk("[%s]: Turned on RTL8139.\n", MODULE_NAME);
-
-  /*
-   *  We will now do a software reset
-   *  to clear any garbage left in the
-   *  registers and stuff.
-   *
-   *  This can be done by sending 0x10 to
-   *  the command register.
-   *
-   *  The RST bit must be checked to 
-   *  make sure that the chip has finished the 
-   *  reset. If the RST bit is high (1), then the reset is still 
-   *  in operation.
-   *
-   */
-
+  // Reset the card to ensure no garbage is in the registers
+  // and stuff.
   outb(iobase + REG_COMMAND, CMD_RESET);
   while (inb(iobase + REG_COMMAND) & CMD_RESET);
 
-  /*
-   *  Setup RX and TX buffers.
-   *  (needs to be physical address, hence the subtraction by VMM_HIGHER_HALF).
-   *
-   */
-  outl(iobase + REG_RXBUF, (uintptr_t)(&rxbuf) - VMM_HIGHER_HALF);
+  // Unlock config registers.
+  outb(iobase + REG_CFG9346, CFG9346_EEM0 | CFG9346_EEM1);
 
+  // Turn on multicast.
+  outl(iobase + REG_MAR0, 0xFFFFFFFF);
+	outl(iobase + REG_MAR4, 0xFFFFFFFF);
+
+  PRINTK_SERIAL("[%s]: Multicast enabled.\n", MODULE_NAME);
+
+  // Enable RX and TX.
+  outb(iobase + REG_COMMAND, CMD_RX_ENABLE | CMD_TX_ENABLE);
+  PRINTK_SERIAL("[%s]: RX and TX enabled.\n", MODULE_NAME);
+
+  // Turn on the card.
+  outb(iobase + REG_CONFIG1, 0x00);
+  printk("[%s]: Turned on RTL8139.\n", MODULE_NAME);
+
+  // Setup RX buffer.
+  // (needs to be physical address, hence the subtraction by VMM_HIGHER_HALF).
+  outl(iobase + REG_RXBUF, (uintptr_t)(&rxbuf) - VMM_HIGHER_HALF); 
+  PRINTK_SERIAL("[%s]: RX buffer have been set up.\n", MODULE_NAME);
+
+  // Reset missed packet count which basically
+  // is the number of packets discarded due to RX FIFO overflow.
+  outb(iobase + REG_MPC, 0);
+  PRINTK_SERIAL("[%s]: MPC set to zero.\n", MODULE_NAME);
+
+  // Basic mode control configuration, 100mbit full duplex auto negoiation mode
+	outl(iobase + REG_BMCR, BMCR_SPEED  | BMCR_AUTO_NEGOTIATE | BMCR_DUPLEX);
+
+  // Enable control flow.
+  outb(iobase + REG_MSR, MSR_RX_FLOW_CONTROL_ENABLE);
+
+  // Set RX mode: accept rtl8139 MAC match, multicast, and broadcasted packets
+	// Also use max DMA transfer size and no FIFO threshold
+	outl(iobase + REG_RXCFG, RXCFG_APM | RXCFG_AM | RXCFG_AB | RXCFG_WRAP_INHIBIT | RXCFG_MAX_DMA_UNLIMITED | RXCFG_RBLN_32K | RXCFG_FTH_NONE);
+  PRINTK_SERIAL("[%s]: RX_MODE => accept rtl8139 MAC match, multicast and broadcasted packets.\n", MODULE_NAME);
+  PRINTK_SERIAL("[%s]: RX_MODE_CONTINUED => Use max DMA transfer size and no FIFO threshold.\n", MODULE_NAME);
+
+  // Set TX mode to use default retry count, max DMA burst size and interframe gap time.
+  outl(iobase + REG_TXCFG, TXCFG_TXRR_ZERO | TXCFG_MAX_DMA_1K | TXCFG_IFG11);
+  PRINTK_SERIAL("[%s]: TX_MODE => Use default retry count, max DMA burst size, interframe gap time.\n", MODULE_NAME);
+
+  // Setup TX buffers.
   for (unsigned int i = 0; i < TX_BUFFER_COUNT; ++i) {
     txbufs[i] = (uint64_t)kmalloc(TX_BUFFER_SIZE) - VMM_HIGHER_HALF;
   }
+
+  PRINTK_SERIAL("[%s]: TX buffers have been set up.\n", MODULE_NAME);
+
+  // Re-lock configuration registers.
+  outb(iobase + REG_CFG9346, CFG9346_NONE);
+  PRINTK_SERIAL("[%s]: Locked configuration registers.\n", MODULE_NAME);
+
+  // Re-enable RX/TX because the card
+  // sometimes does a funny and disables them.
+	outw(iobase + REG_IMR, INT_RXOK | INT_RXERR | INT_TXOK | INT_TXERR | INT_RX_BUFFER_OVERFLOW | INT_LINK_CHANGE | INT_RX_FIFO_OVERFLOW | INT_LENGTH_CHANGE | INT_SYSTEM_ERROR);
+	outw(iobase + REG_ISR, 0xFFFF);
   
-  PRINTK_SERIAL("[%s]: RX and TX buffer set.\n", MODULE_NAME);
-
-  /*
-   *  Set IMR TOK (Transmit OK) and ROK (Receive OK) bits to high.
-   *
-   */
-
-  outw(iobase + REG_IMR, (uintptr_t)0x0005);
-
-  /*
-   * Setup RXCFG.
-   *
-   */
-
-  outl(iobase + REG_RXCFG, RXCFG_APM | RXCFG_AM | RXCFG_AB | RXCFG_WRAP_INHIBIT | RXCFG_MAX_DMA_UNLIMITED | RXCFG_RBLN_32K | RXCFG_FTH_NONE);
-
-  /*
-   *  Enable Receive and Transmit.
-   *
-   */
-
-  outb(iobase + REG_COMMAND, 0x0C);
-  PRINTK_SERIAL("[%s]: Receive enable and Transmit enable set, card now can propagate packets.\n", MODULE_NAME);
-  PRINTK_SERIAL("[%s]: Verifying link status..\n", MODULE_NAME);
-
   if (link_up()) {
     PRINTK_SERIAL("[%s]: Link up @%dmbps!\n", MODULE_NAME, get_speed());
   } else {
