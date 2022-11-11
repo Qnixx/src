@@ -1,4 +1,5 @@
 #include <drivers/net/rtl8139.h>
+#include <net/ethernet.h>
 #include <arch/bus/pci.h>
 #include <arch/x86/io.h>
 #include <arch/x86/apic/lapic.h>
@@ -28,7 +29,7 @@ static uint8_t rxbuf[RX_BUFFER_SIZE];
 static uint8_t txbufs[TX_BUFFER_COUNT];
 static size_t next_txbuf = 0;
 static pci_device_t dev;
-static uint8_t mac_addr[6];
+mac_address_t rtl8139_mac_addr;
 
 
 static inline uint8_t link_up(void) {
@@ -43,7 +44,7 @@ static inline uint8_t get_speed(void) {
 
 static void update_mac_addr(void) {
   for (unsigned int i = 0; i < 6; ++i) {
-    mac_addr[i] = inb(iobase + REG_MAC + i);
+    rtl8139_mac_addr[i] = inb(iobase + REG_MAC + i);
   }
 }
 
@@ -73,12 +74,6 @@ __attribute__((interrupt)) static void isr(void* stackframe) {
 
   lapic_send_eoi();
 }
-
-
-uint8_t* rtl8139_get_mac_addr(void) {
-  return mac_addr;
-}
-
 
 void rtl8139_send_packet(void* data, size_t size) { 
   if (iobase == 0)
@@ -200,6 +195,6 @@ void rtl8139_init(void) {
   }
 
   update_mac_addr();
-  printk("[%s]: MAC address: %X:%X:%X:%X:%X:%X\n", MODULE_NAME, mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+  printk("[%s]: MAC address: %X:%X:%X:%X:%X:%X\n", MODULE_NAME, rtl8139_mac_addr[0], rtl8139_mac_addr[1], rtl8139_mac_addr[2], rtl8139_mac_addr[3], rtl8139_mac_addr[4], rtl8139_mac_addr[5]);
   register_irq(dev.irq_line, isr, 0); 
 }

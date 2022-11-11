@@ -8,7 +8,8 @@
 #include <arch/x86/apic/lapic.h>
 #include <arch/x86/apic/ioapic.h>
 #include <intr/intr.h>
-#include <drivers/net/rtl8139.h>      // TODO: Move.
+#include <net/ethernet.h>
+#include <drivers/net/rtl8139.h>
 #include <mm/heap.h>
 #include <firmware/acpi/acpi.h>
 
@@ -43,11 +44,11 @@ __attribute__((noreturn)) void _start(void) {
   ioapic_init();
 
   init_drivers();
-  ASMV("sti"); 
+  ASMV("sti");
   
-  uint32_t buf[100]; 
+  uint8_t buf[100];
   kmemset(buf, 0xAE, sizeof(buf));
-  rtl8139_send_packet(buf, sizeof(buf)); 
+  ethernet_send(NULL, buf, sizeof(buf)); 
 
   while (1);
 }
