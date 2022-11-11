@@ -10,14 +10,6 @@
 
 MODULE("arp");
 
-uint16_t htons(uint16_t v) {
-  return (v >> 8) | (v << 8);
-}
-
-uint32_t htonl(uint32_t v) {
-  return htons(v >> 16) | (htons((uint16_t) v) << 16);
-}
-
 
 void arp_send(ipv4_address_t target_paddr) {
   // Allocate memory for a packet.
