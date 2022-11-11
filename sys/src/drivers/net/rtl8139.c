@@ -136,7 +136,7 @@ void rtl8139_init(void) {
 
   // Turn on multicast.
   outl(iobase + REG_MAR0, 0xFFFFFFFF);
-	outl(iobase + REG_MAR4, 0xFFFFFFFF);
+  outl(iobase + REG_MAR4, 0xFFFFFFFF);
 
   PRINTK_SERIAL("[%s]: Multicast enabled.\n", MODULE_NAME);
 
@@ -159,14 +159,14 @@ void rtl8139_init(void) {
   PRINTK_SERIAL("[%s]: MPC set to zero.\n", MODULE_NAME);
 
   // Basic mode control configuration, 100mbit full duplex auto negoiation mode
-	outl(iobase + REG_BMCR, BMCR_SPEED  | BMCR_AUTO_NEGOTIATE | BMCR_DUPLEX);
+  outl(iobase + REG_BMCR, BMCR_SPEED  | BMCR_AUTO_NEGOTIATE | BMCR_DUPLEX);
 
   // Enable control flow.
   outb(iobase + REG_MSR, MSR_RX_FLOW_CONTROL_ENABLE);
 
   // Set RX mode: accept rtl8139 MAC match, multicast, and broadcasted packets
-	// Also use max DMA transfer size and no FIFO threshold
-	outl(iobase + REG_RXCFG, RXCFG_APM | RXCFG_AM | RXCFG_AB | RXCFG_WRAP_INHIBIT | RXCFG_MAX_DMA_UNLIMITED | RXCFG_RBLN_32K | RXCFG_FTH_NONE);
+  // Also use max DMA transfer size and no FIFO threshold
+  outl(iobase + REG_RXCFG, RXCFG_APM | RXCFG_AM | RXCFG_AB | RXCFG_WRAP_INHIBIT | RXCFG_MAX_DMA_UNLIMITED | RXCFG_RBLN_32K | RXCFG_FTH_NONE);
   PRINTK_SERIAL("[%s]: RX_MODE => accept rtl8139 MAC match, multicast and broadcasted packets.\n", MODULE_NAME);
   PRINTK_SERIAL("[%s]: RX_MODE_CONTINUED => Use max DMA transfer size and no FIFO threshold.\n", MODULE_NAME);
 
@@ -187,8 +187,8 @@ void rtl8139_init(void) {
 
   // Re-enable RX/TX because the card
   // sometimes does a funny and disables them.
-	outw(iobase + REG_IMR, INT_RXOK | INT_RXERR | INT_TXOK | INT_TXERR | INT_RX_BUFFER_OVERFLOW | INT_LINK_CHANGE | INT_RX_FIFO_OVERFLOW | INT_LENGTH_CHANGE | INT_SYSTEM_ERROR);
-	outw(iobase + REG_ISR, 0xFFFF);
+  outw(iobase + REG_IMR, INT_RXOK | INT_RXERR | INT_TXOK | INT_TXERR | INT_RX_BUFFER_OVERFLOW | INT_LINK_CHANGE | INT_RX_FIFO_OVERFLOW | INT_LENGTH_CHANGE | INT_SYSTEM_ERROR);
+  outw(iobase + REG_ISR, 0xFFFF);
   
   if (link_up()) {
     PRINTK_SERIAL("[%s]: Link up @%dmbps!\n", MODULE_NAME, get_speed());
