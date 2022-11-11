@@ -45,8 +45,9 @@ __attribute__((interrupt)) static void isr(void* stackframe) {
     outw(iobase + REG_ISR, status);
 
     if  ((status & (INT_RXOK | INT_RXERR | INT_TXOK | INT_TXERR | INT_RX_BUFFER_OVERFLOW | INT_LINK_CHANGE | INT_RX_FIFO_OVERFLOW | INT_LENGTH_CHANGE | INT_SYSTEM_ERROR)) == 0) break;
-    lapic_send_eoi();
   }
+
+  lapic_send_eoi();
 }
 
 
@@ -69,6 +70,7 @@ void rtl8139_send_packet(void* data, size_t size) {
   next_txbuf = (hwbuf + 1) % 4;
   kmemcpy(txbufs[hwbuf], data, size);
   kmemzero(txbufs[hwbuf], TX_BUFFER_SIZE - size);
+  if (size < 60) size = 60;
   outl(iobase + REG_TXSTATUS0 + (hwbuf * 4), size);
 }
 
@@ -83,6 +85,8 @@ void rtl8139_init(void) {
   }
 
   printk("[%s]: RTL8139 card is attached on PCI bus %d, slot %d\n", MODULE_NAME, dev.bus, dev.slot);
+  enable_bus_mastering(dev);
+  printk("[%s]: Bus mastering enabled for the NIC.\n", MODULE_NAME);
 
   /*
    *  Fetch I/O base.
@@ -157,5 +161,5 @@ void rtl8139_init(void) {
     PRINTK_SERIAL("[%s]: Link down.\n", MODULE_NAME);
   }
 
-  register_irq(dev.irq_line, isr, 0);
+  register_irq(dev.irq_line, isr, 0); 
 }

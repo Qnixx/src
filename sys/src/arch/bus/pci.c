@@ -10,12 +10,22 @@ uint16_t pci_config_read(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset
   uint32_t lbus = (uint32_t)bus;
   uint32_t lslot = (uint32_t)slot;
   uint32_t lfunc = (uint32_t)func;
-  uint16_t tmp = 0;
 
   uint32_t address =  (uint32_t)((lbus << 16) | (lslot << 11) | (lfunc << 8) | (offset & 0xFC) | ((uint32_t)0x80000000));
   outl(CONFIG_ADDR, address);
-  tmp = (uint16_t)((inl(CONFIG_DATA) >> ((offset & 2) * 8)) & 0xFFFF);
-  return tmp;
+  return (uint16_t)((inl(CONFIG_DATA) >> ((offset & 2) * 8)) & 0xFFFF);
+}
+
+
+static void pci_config_write(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset, uint16_t value) {
+  uint32_t address =  (uint32_t)(((uint32_t)bus << 16) | ((uint32_t)slot << 11) | ((uint32_t)func << 8) | (offset & 0xFC) | ((uint32_t)0x80000000));
+  outl(CONFIG_ADDR, address);
+  outl(CONFIG_DATA, (uint16_t)value);
+}
+
+void enable_bus_mastering(pci_device_t dev) {
+  uint16_t val = pci_config_read(dev.bus, dev.slot, dev.func, 0x4);
+  pci_config_write(dev.bus, dev.slot, dev.func, 0x4, (val | (1 << 2) | (1 << 0)));
 }
 
 
@@ -52,6 +62,7 @@ pci_device_t pci_find(unsigned int vendor_id, unsigned int device_id) {
           dev.bar0 = get_bar0(bus, slot, func);
           dev.bus = bus;
           dev.slot = slot;
+          dev.func = func;
           return dev;
         }
       }

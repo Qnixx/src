@@ -12,10 +12,12 @@ typedef struct {
   uint32_t bar0;
   uint8_t bus;
   uint8_t slot;
+  uint8_t func;
 } pci_device_t;
 
 
 pci_device_t pci_find(unsigned int vendor_id, unsigned int device_id);
+void enable_bus_mastering(pci_device_t dev);
 
 
 #endif
