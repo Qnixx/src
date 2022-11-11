@@ -105,6 +105,17 @@
 #define TX_STATUS_OWN           0x2000
 #define TX_STATUS_THRESHOLD_MAX 0x3F0000
 
+// Recieve status
+#define RX_MULTICAST             0x8000
+#define RX_PHYSICAL_MATCH        0x4000
+#define RX_BROADCAST             0x2000
+#define RX_INVALID_SYMBOL_ERROR  0x0020
+#define RX_RUNT                  0x0010
+#define RX_LONG                  0x0008
+#define RX_CRC_ERROR             0x0004
+#define RX_FRAME_ALIGNMENT_ERROR 0x0002
+#define RX_OK                    0x0001
+
 extern mac_address_t rtl8139_mac_addr;
 
 

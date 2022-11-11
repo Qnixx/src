@@ -25,10 +25,12 @@ MODULE("rtl8139");
 
 
 static uint32_t iobase = 0;
-static uint8_t rxbuf[RX_BUFFER_SIZE];
 static uint8_t txbufs[TX_BUFFER_COUNT];
 static size_t next_txbuf = 0;
+static ssize_t rxbuf_offset = 0;
 static pci_device_t dev;
+static uint8_t* rxbuf = NULL;         // Must be RX_BUFFER_SIZE of size.
+static void* packet_buf = NULL;
 mac_address_t rtl8139_mac_addr;
 
 
@@ -48,6 +50,25 @@ static void update_mac_addr(void) {
   }
 }
 
+
+static void recieve(void) {
+  uint8_t* packet = rxbuf + rxbuf_offset;
+  uint16_t status = *(uint16_t*)(packet + 0);
+  uint16_t length = *(uint16_t*)(packet + 2);
+
+  if (!(status & RX_OK) || (status & (RX_INVALID_SYMBOL_ERROR | RX_CRC_ERROR | RX_FRAME_ALIGNMENT_ERROR)) || (length >= PACKET_SIZE_MAX) || (length < PACKET_SIZE_MIN)) {
+    printk("[%s]: Got bad packet (status=%x, length=%x)\n", MODULE_NAME, status, length);
+    return;
+  }
+
+  kmemcpy(packet_buf, (uint8_t*)(packet + 4), length - 4);
+  rxbuf_offset = ((rxbuf_offset + length + 4 + 3) & ~3) % RX_BUFFER_SIZE;
+  outw(iobase + REG_CAPR, rxbuf_offset - 0x10);
+  rxbuf_offset %= RX_BUFFER_SIZE;
+
+  PRINTK_SERIAL("[%s]: Recieved %d bytes of data.\n", MODULE_NAME, length);
+}
+
 __attribute__((interrupt)) static void isr(void* stackframe) {
   for(;;) {
     uint16_t status = inw(iobase + REG_ISR);
@@ -55,20 +76,21 @@ __attribute__((interrupt)) static void isr(void* stackframe) {
 
     if  ((status & (INT_RXOK | INT_RXERR | INT_TXOK | INT_TXERR | INT_RX_BUFFER_OVERFLOW | INT_LINK_CHANGE | INT_RX_FIFO_OVERFLOW | INT_LENGTH_CHANGE | INT_SYSTEM_ERROR)) == 0) break;
 
+    if (status & INT_TXOK) {
+      PRINTK_SERIAL("[%s]: TX complete.\n", MODULE_NAME);
+    }
+
     if (status & INT_RXOK) {
-      PRINTK_SERIAL("[%s]: RX ready\n", MODULE_NAME);
+      PRINTK_SERIAL("[%s]: RX ready.\n", MODULE_NAME);
+      recieve();
     }
 
     if (status & INT_RXERR) {
       PRINTK_SERIAL("[%s]: RX error.\n", MODULE_NAME);
     }
 
-    if (status & INT_TXOK) {
-      PRINTK_SERIAL("[%s]: TX complete\n", MODULE_NAME);
-    }
-
     if (status & INT_RX_BUFFER_OVERFLOW) {
-      PRINTK_SERIAL("[%s]: RX buffer overflow\n", MODULE_NAME);
+      PRINTK_SERIAL("[%s]: RX buffer overflow.\n", MODULE_NAME);
     }
 
     if (status & INT_LINK_CHANGE) { 
@@ -148,10 +170,17 @@ void rtl8139_init(void) {
   outb(iobase + REG_CONFIG1, 0x00);
   printk("[%s]: Turned on RTL8139.\n", MODULE_NAME);
 
+  // Allocate memory for the RX buffer.
+  rxbuf = kmalloc(RX_BUFFER_SIZE);
+  uintptr_t rxbuf_phys = (uint64_t)rxbuf - VMM_HIGHER_HALF;
+
   // Setup RX buffer.
   // (needs to be physical address, hence the subtraction by VMM_HIGHER_HALF).
-  outl(iobase + REG_RXBUF, (uintptr_t)(&rxbuf) - VMM_HIGHER_HALF); 
+  outl(iobase + REG_RXBUF, rxbuf_phys);
   PRINTK_SERIAL("[%s]: RX buffer have been set up.\n", MODULE_NAME);
+  
+  // Allocate memory for packet buffer.
+  packet_buf = kmalloc(PACKET_SIZE_MAX);
 
   // Reset missed packet count which basically
   // is the number of packets discarded due to RX FIFO overflow.
