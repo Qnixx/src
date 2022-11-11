@@ -121,5 +121,7 @@ extern mac_address_t rtl8139_mac_addr;
 
 void rtl8139_init(void);
 void rtl8139_send_packet(void* data, size_t size);
+void* rtl8139_read_packet(void);
+uint8_t rtl8139_got_packet(void);
 
 #endif

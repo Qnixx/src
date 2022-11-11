@@ -28,6 +28,7 @@ static uint32_t iobase = 0;
 static uint8_t txbufs[TX_BUFFER_COUNT];
 static size_t next_txbuf = 0;
 static ssize_t rxbuf_offset = 0;
+static uint8_t got_packet = 0;
 static pci_device_t dev;
 static uint8_t* rxbuf = NULL;         // Must be RX_BUFFER_SIZE of size.
 static void* packet_buf = NULL;
@@ -83,6 +84,7 @@ __attribute__((interrupt)) static void isr(void* stackframe) {
     if (status & INT_RXOK) {
       PRINTK_SERIAL("[%s]: RX ready.\n", MODULE_NAME);
       recieve();
+      got_packet = 1;
     }
 
     if (status & INT_RXERR) {
@@ -126,6 +128,21 @@ void rtl8139_send_packet(void* data, size_t size) {
   kmemzero((void*)(ALIGN_DOWN(virt_addr, 0x1000)), TX_BUFFER_SIZE - size);
   kmemcpy((void*)(ALIGN_DOWN(virt_addr, 0x1000)), data, size);
   outl(iobase + REG_TXSTATUS0 + (hwbuf * 4), size);
+}
+
+
+void* rtl8139_read_packet(void) {
+  return packet_buf;
+}
+
+
+uint8_t rtl8139_got_packet(void) {
+  if (!(got_packet))
+    return 0;
+
+  uint8_t tmp = got_packet;
+  got_packet = 0;
+  return tmp;
 }
 
 

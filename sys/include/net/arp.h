@@ -7,6 +7,7 @@
 #include <lib/types.h>
 
 #define ARP_REQUEST 1
+#define ARP_RESPONSE 2
 
 typedef struct {
     uint16_t htype;
