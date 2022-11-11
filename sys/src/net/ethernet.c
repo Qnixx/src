@@ -8,11 +8,6 @@
 
 MODULE("ethernet");
 
-/*
- *  Ethernet Driver.
- *
- */
-
 void ethernet_send(mac_address_t dest, uint8_t* data, int length) {
   int size = length + sizeof(ethernet_header_t);
   ethernet_header_t* hdr = (ethernet_header_t*)kmalloc(sizeof(ethernet_header_t));
