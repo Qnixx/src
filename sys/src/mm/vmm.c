@@ -79,6 +79,18 @@ uintptr_t get_cr3(void) {
   return cr3_val;
 }
 
+
+uintptr_t mkpml4(void) {
+  uint64_t* cr3_val = (uint64_t*)get_cr3();
+  uint64_t* new = (uint64_t*)pmm_alloc();
+
+  for (uint16_t i = 0; i < 512; ++i) {
+    new[i] = cr3_val[i];
+  }
+
+  return (uintptr_t)new;
+}
+
 void* vmm_alloc_page(void) {
   uintptr_t ptr = pmm_alloc();
   if(ptr == 0) return 0;

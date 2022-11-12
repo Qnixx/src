@@ -17,5 +17,6 @@ extern volatile struct limine_hhdm_request hhdm_request;
 void vmm_map_page(uintptr_t* pml4, uintptr_t vaddr, uintptr_t phys, uint64_t flags);
 uintptr_t get_cr3(void);
 void* vmm_alloc_page(void);
+uintptr_t mkpml4(void);
 
 #endif

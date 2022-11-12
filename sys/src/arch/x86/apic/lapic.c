@@ -1,5 +1,6 @@
 #include <firmware/acpi/acpi.h>
 #include <arch/x86/apic/lapic.h>
+#include <arch/cpu/smp.h>
 #include <lib/log.h>
 #include <lib/module.h>
 
@@ -93,5 +94,4 @@ void lapic_init(void) {
    */
 
   write(LAPIC_SVR, (1 << 8) | 0xFF);
-  PRINTK_SERIAL("[%s]: Bit 8 of SVR set, Local APIC enabled for core with LAPIC of %x\n", MODULE_NAME, lapic_read_id());
 }

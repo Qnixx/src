@@ -50,5 +50,4 @@ void register_irq(uint8_t irq, void* isr, uint64_t extra_redentry_data) {
 
 void load_idt(void) {
   ASMV("lidt %0" :: "m" (idtr));
-  PRINTK_SERIAL("[%s]: Interrupt Descriptor Table loaded @%x with limit %x\n", MODULE_NAME, idtr.base, idtr.limit);
 }

@@ -5,6 +5,8 @@
 
 MODULE("heap");
 
+#define HEAP_DEBUG 0
+
 static heapblk_t* heap_head = NULL;
 static heapblk_t* heap_tail = NULL;
 static size_t total_size = 0;
@@ -26,7 +28,10 @@ void* kmalloc(size_t size) {
       return NULL;
     }
 	  total_size += 0x1000;
+
+#if HEAP_DEBUG
     PRINTK_SERIAL("[%s]: Allocated new heap page.\n", MODULE_NAME);
+#endif
   }
 
   heapblk_t* region = first_fit(size);
@@ -42,7 +47,9 @@ void* kmalloc(size_t size) {
   }
 
   bytes_allocated += size;
+#if HEAP_DEBUG
   PRINTK_SERIAL("[%s]: Allocated %d bytes, now %dKiB used.\n", MODULE_NAME, region->size, bytes_allocated / 1024);
+#endif
   return DATA_START(region);
 }
 
@@ -55,7 +62,9 @@ void kfree(void* ptr) {
 
   heap_tail = region;
   bytes_allocated -= region->size;
+#if HEAP_DEBUG
   PRINTK_SERIAL("[%s]: Freed %d bytes, now %dKiB used.\n", MODULE_NAME, region->size, bytes_allocated / 1024);
+#endif
 }
 
 void heap_init(void) {

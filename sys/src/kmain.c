@@ -12,6 +12,7 @@
 #include <mm/heap.h>
 #include <firmware/acpi/acpi.h>
 #include <net/udp.h>
+#include <proc/proc.h>
 
 MODULE("kmain");
 
@@ -50,6 +51,8 @@ __attribute__((noreturn)) void _start(void) {
   // icmp_send_msg(IPv4(192, 168, 1, 152), 8, 0, payload, sizeof(payload));
   // 192.168.1.166
   udp_send(IPv4(192, 168, 1, 166), payload, sizeof(payload));
+
+  tasking_init();
 
   while (1);
 }
