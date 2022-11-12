@@ -8,10 +8,10 @@
 #include <arch/x86/apic/lapic.h>
 #include <arch/x86/apic/ioapic.h>
 #include <intr/intr.h>
-#include <net/arp.h>
 #include <drivers/net/rtl8139.h>
 #include <mm/heap.h>
 #include <firmware/acpi/acpi.h>
+#include <net/icmp.h>
 
 MODULE("kmain");
 
@@ -46,9 +46,8 @@ __attribute__((noreturn)) void _start(void) {
   init_drivers();
   ASMV("sti");
   
-  // Dummy payload (doesn't actually mean anything)
-  uint8_t payload[2] = { 0x50, 0x02 };
-  ip_send(IPv4(192, 168, 1, 152), IP_PROTOCOL_ICMP, payload, 2);
+  uint8_t payload[4] = { 0x00, 0x05, 0x00, 0x01 };
+  icmp_send_msg(IPv4(192, 168, 1, 152), 8, 0, payload, sizeof(payload));
 
   while (1);
 }
