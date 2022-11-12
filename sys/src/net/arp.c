@@ -53,6 +53,8 @@ mac_address_t* arp_resolve(ipv4_address_t target_paddr) {
       (pkt->sender_paddr >> 0) & 0xFF, (pkt->sender_paddr >> 8) & 0xFF, (pkt->sender_paddr >> 16) & 0xFF, (pkt->sender_paddr >> 24) & 0xFF,
       pkt->sender_haddr[0], pkt->sender_haddr[1], pkt->sender_haddr[2], pkt->sender_haddr[3], pkt->sender_haddr[4], pkt->sender_haddr[5]
     );
+  } else {
+    return NULL;
   }
 
   return &pkt->sender_haddr;
