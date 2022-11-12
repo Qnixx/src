@@ -46,8 +46,8 @@ __attribute__((noreturn)) void _start(void) {
   init_drivers();
   ASMV("sti");
   
-  uint8_t payload[4] = { 0x00, 0x05, 0x00, 0x01 };
-  icmp_send_msg(IPv4(192, 168, 1, 152), 8, 0, payload, sizeof(payload));
+  // uint8_t payload[4] = { 0x00, 0x05, 0x00, 0x01 };
+  // icmp_send_msg(IPv4(192, 168, 1, 152), 8, 0, payload, sizeof(payload));
 
   while (1);
 }
