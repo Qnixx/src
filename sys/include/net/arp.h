@@ -7,7 +7,7 @@
 #include <lib/types.h>
 
 #define ARP_REQUEST 1
-#define ARP_RESPONSE 2
+#define ARP_REPLY   2
 
 typedef struct {
     uint16_t htype;
@@ -22,6 +22,6 @@ typedef struct {
     ipv4_address_t target_paddr;
 } _packed arp_packet_t;
 
-void arp_send(ipv4_address_t target_paddr);
+mac_address_t* arp_resolve(ipv4_address_t target_paddr);
 
 #endif

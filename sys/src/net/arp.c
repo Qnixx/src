@@ -11,7 +11,7 @@
 MODULE("arp");
 
 
-void arp_send(ipv4_address_t target_paddr) {
+mac_address_t* arp_resolve(ipv4_address_t target_paddr) {
   // Allocate memory for a packet.
   arp_packet_t* packet = kmalloc(sizeof(arp_packet_t));
 
@@ -31,7 +31,8 @@ void arp_send(ipv4_address_t target_paddr) {
   packet->target_paddr = target_paddr;
   
   // Send it off!
-  ethernet_send(packet->target_haddr, (uint8_t*)packet, sizeof(arp_packet_t));
+  ethernet_send(packet->target_haddr, ETHERTYPE_ARP, (uint8_t*)packet, sizeof(arp_packet_t));
+  kfree(packet);
 
   ssize_t spin = 10000000;
 
@@ -40,16 +41,19 @@ void arp_send(ipv4_address_t target_paddr) {
     --spin;
   }
 
-  if (spin > 0) {
-    // Skip ethernet header.
-    arp_packet_t* pkt = rtl8139_read_packet() + sizeof(ethernet_header_t);
+  if (spin <= 0) return NULL;
+
+  // Skip ethernet header.
+  arp_packet_t* pkt = rtl8139_read_packet() + sizeof(ethernet_header_t);
   
-    // Write out response.
-    if (pkt->operation == BIG_ENDIAN(ARP_RESPONSE)) {
-      PRINTK_SERIAL("[%s]: Got ARP response from %X:%X:%X:%X:%X:%X.\n", MODULE_NAME,
-          pkt->sender_haddr[0], pkt->sender_haddr[1], pkt->sender_haddr[2], pkt->sender_haddr[3], pkt->sender_haddr[4], pkt->sender_haddr[5]);
-    }
+  // Write out reply
+  if (pkt->operation == BIG_ENDIAN(ARP_REPLY)) {
+    PRINTK_SERIAL(
+      "[%s]: Got ARP reply; %d.%d.%d.%d is at %X:%X:%X:%X:%X:%X.\n", MODULE_NAME,
+      (pkt->sender_paddr >> 0) & 0xFF, (pkt->sender_paddr >> 8) & 0xFF, (pkt->sender_paddr >> 16) & 0xFF, (pkt->sender_paddr >> 24) & 0xFF,
+      pkt->sender_haddr[0], pkt->sender_haddr[1], pkt->sender_haddr[2], pkt->sender_haddr[3], pkt->sender_haddr[4], pkt->sender_haddr[5]
+    );
   }
 
-  kfree(packet);
+  return &pkt->sender_haddr;
 }

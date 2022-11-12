@@ -46,8 +46,9 @@ __attribute__((noreturn)) void _start(void) {
   init_drivers();
   ASMV("sti");
   
-  // 192.168.1.152
-  arp_send(IPv4(192, 168, 1, 152));
+  // Dummy payload (doesn't actually mean anything)
+  uint8_t payload[2] = { 0x50, 0x02 };
+  ip_send(IPv4(192, 168, 1, 94), IP_PROTOCOL_ICMP, payload, 2);
 
   while (1);
 }
