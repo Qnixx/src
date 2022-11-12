@@ -28,7 +28,7 @@ void ip_send(ipv4_address_t dest_ipv4, ip_protocol_t protocol, uint8_t* payload,
   hdr->ttl = 64;
   hdr->protocol = protocol;
 
-  hdr->source = IPv4(192, 168, 1, 116);
+  hdr->source = IPv4(192, 168, 1, 166);
   hdr->dest = dest_ipv4;
 
   kmemcpy((uint8_t*)(pkt + sizeof(iphdr_t)), payload, length);
