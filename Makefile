@@ -1,3 +1,4 @@
+LOCAL_IP = 192.168.1.152
 CFILES = $(shell find sys/src/ -name "*.c")
 CFLAGS = -fexceptions -std=gnu11 -ffreestanding -fno-stack-protector \
   -fno-pic -Werror=implicit -Werror=implicit-function-declaration -Werror=implicit-int \
@@ -53,8 +54,14 @@ debug_kvm:
 
 .PHONY:
 run:
-	bash tools/init_tap.sh
-	qemu-system-x86_64 --enable-kvm -cpu qemu64 -M q35 -m 3G -drive file=Qnixx.iso,format=raw -boot d -smp 4 -rtc base=localtime -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0 -serial stdio -netdev tap,id=mynet0,ifname=tap0,script=no,downscript=no -device rtl8139,netdev=mynet0,mac=52:55:00:d1:55:01 -net user
+	@echo "Creating tap..."
+	@sudo ip tuntap add dev tap0 mode tap user $(shell id -u)
+	@sudo ip address add $(LOCAL_IP) dev tap0
+	@sudo ip link set dev tap0 up
+	@echo "Running..."
+	@qemu-system-x86_64 --enable-kvm -cpu qemu64 -M q35 -m 3G -drive file=Qnixx.iso,format=raw -boot d -smp 4 -rtc base=localtime -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0 -serial stdio -netdev tap,id=br0,ifname=tap0,script=no,downscript=no -device rtl8139,netdev=br0,mac=52:55:00:d1:55:01
+	@echo "Removing tap..."
+	@sudo ip tuntap del dev tap0 mode tap
 
 .PHONY: toolchain
 toolchain:
