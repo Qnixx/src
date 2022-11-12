@@ -4,11 +4,10 @@
 #include <lib/types.h>
 
 /*
- *  Ethernet, MAC, and IPv4 definitions.
+ *  Ethernet and MAC definitions.
  */
 
 typedef uint8_t mac_address_t[6];
-typedef uint32_t ipv4_address_t;
 
 // EtherType
 // Standard protocol id values used in many different structures
@@ -26,6 +25,6 @@ typedef struct {
 	uint8_t payload[0];
 } ethernet_header_t;
 
-void ethernet_send(mac_address_t dest, uint8_t* data, int length);
+void ethernet_send(mac_address_t dest, ethertype_t ethertype, uint8_t* data, int length);
 
 #endif
