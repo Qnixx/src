@@ -15,7 +15,6 @@ void udp_send(ipv4_address_t dest_ipv4, uint8_t* payload, size_t length) {
   hdr->length = BIG_ENDIAN(size);
   kmemcpy((uint8_t*)(packet + sizeof(udp_datagram_header_t)), payload, length);
   
-  printk("UDP LENGTH: %x\n", hdr->length);
   ip_send(dest_ipv4, IP_PROTOCOL_UDP, packet, size);
   kfree(packet);
 }
