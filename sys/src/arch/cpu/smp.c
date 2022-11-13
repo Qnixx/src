@@ -59,11 +59,13 @@ void smp_init(core_t* core_list) {
     panic();
   }
 
+  printk("[%s]: Bootstraping cores 1-%d", MODULE_NAME, core_count - 1);
   for (size_t i = 0; i < core_count; ++i) {
     cores[i]->extra_argument = start_pml4;
     cores[i]->goto_address = core_init;
 
     if (cores[i]->lapic_id != smp_resp->bsp_lapic_id)
-      printk("[%s]: Bootstrapped core with LAPIC of %d\n", MODULE_NAME, cores[i]->lapic_id);
+      printk(".");
   }
+  printk("\n");
 }
