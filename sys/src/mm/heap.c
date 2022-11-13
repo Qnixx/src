@@ -21,7 +21,11 @@ static heapblk_t* first_fit(size_t size) {
 }
 
 void* kmalloc(size_t size) {
-  if (size == 0) return NULL;
+  if (size == 0) {
+    printk("[%s:%s()]: size == 0\n", MODULE_NAME, __func__);
+    return NULL;
+  }
+
   if (bytes_allocated + size > total_size) {
     if(vmm_alloc_page() == NULL) {
       printk(PRINTK_PANIC "Failed to allocate a new heap page\n");
@@ -50,6 +54,7 @@ void* kmalloc(size_t size) {
 #if HEAP_DEBUG
   PRINTK_SERIAL("[%s]: Allocated %d bytes, now %dKiB used.\n", MODULE_NAME, region->size, bytes_allocated / 1024);
 #endif
+  
   return DATA_START(region);
 }
 
