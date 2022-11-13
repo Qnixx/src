@@ -70,7 +70,7 @@ static void recieve(void) {
   PRINTK_SERIAL("[%s]: Recieved %d bytes of data.\n", MODULE_NAME, length);
 }
 
-__attribute__((interrupt)) static void isr(void* stackframe) {
+_isr static void isr(void* stackframe) {
   for(;;) {
     uint16_t status = inw(iobase + REG_ISR);
     outw(iobase + REG_ISR, status);

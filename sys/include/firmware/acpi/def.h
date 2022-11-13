@@ -2,6 +2,7 @@
 #define ACPI_TABLES_H
 
 #include <lib/types.h>
+#include <lib/asm.h>
 
 
 typedef struct {
@@ -10,7 +11,7 @@ typedef struct {
     char OEMID[6];
     uint8_t rev;
     uint32_t rsdtaddr;
-} __attribute__((packed)) acpi_rsdp_t;
+} _packed acpi_rsdp_t;
 
 
 typedef struct {
@@ -19,7 +20,7 @@ typedef struct {
     uint64_t xsdtAddr;
     uint8_t extendedChecksum;
     uint8_t reserved[3];
-} __attribute__((packed)) acpi_rsdp2_t;
+} _packed acpi_rsdp2_t;
 
 
 typedef struct {
@@ -31,7 +32,7 @@ typedef struct {
     uint32_t length;
     uint64_t xsdt;
     uint8_t extended_checksum;
-} __attribute__((packed)) acpi_xsdp_t;
+} _packed acpi_xsdp_t;
 
 
 typedef struct {
@@ -44,19 +45,19 @@ typedef struct {
     uint32_t oem_revision;
     uint32_t creator_id;
     uint32_t creator_revision;
-} __attribute__((packed)) acpi_header_t;
+} _packed acpi_header_t;
 
 
 typedef struct {
     acpi_header_t header;
     uint32_t tables[];
-} __attribute__((packed)) acpi_rsdt_t;
+} _packed acpi_rsdt_t;
 
 
 typedef struct {
     acpi_header_t header;
     uint64_t tables[];
-} __attribute__((packed)) acpi_xsdt_t;
+} _packed acpi_xsdt_t;
 
 
 typedef struct {
@@ -65,7 +66,7 @@ typedef struct {
     uint8_t bit_offset;
     uint8_t access_size;
     uint64_t base;
-} __attribute__((packed)) acpi_gas_t;
+} _packed acpi_gas_t;
 
 
 typedef struct {
@@ -131,26 +132,26 @@ typedef struct {
     acpi_gas_t x_pm_timer_block;
     acpi_gas_t x_gpe0_block;
     acpi_gas_t x_gpe1_block;
-} __attribute__((packed)) acpi_fadt_t;
+} _packed acpi_fadt_t;
 
 
 typedef struct {
     acpi_header_t header;
     uint32_t lapic_addr;
     uint32_t flags;
-} __attribute__((packed)) acpi_madt_t;
+} _packed acpi_madt_t;
 
 typedef struct {
     uint8_t type;
     uint8_t length;
-} __attribute__((packed)) apic_header_t;
+} _packed apic_header_t;
 
 typedef struct {
     apic_header_t header;
     uint8_t processor_id;
     uint8_t apic_id;
     uint32_t flags;
-} __attribute__((packed)) local_apic_t;
+} _packed local_apic_t;
 
 
 typedef struct {
@@ -159,7 +160,7 @@ typedef struct {
     uint8_t reserved;
     uint32_t io_apic_addr;
     uint32_t global_system_interrupt_base;
-} __attribute__((packed)) io_apic_t;
+} _packed io_apic_t;
 
 typedef struct {
     apic_header_t header;
@@ -167,6 +168,6 @@ typedef struct {
     uint8_t source;					// IRQ.
     uint32_t interrupt;				// GSI.
     uint16_t flags;
-} __attribute__((packed)) apic_interrupt_override_t;
+} _packed apic_interrupt_override_t;
 
 #endif

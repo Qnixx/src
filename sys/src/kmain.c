@@ -4,6 +4,7 @@
 #include <lib/string.h>
 #include <lib/module.h>
 #include <mm/pmm.h>
+#include <arch/x86/gdt.h>
 #include <arch/x64/idt.h>
 #include <arch/x86/apic/lapic.h>
 #include <arch/x86/apic/ioapic.h>
@@ -29,12 +30,13 @@ static void init_drivers(void) {
 }
 
 
-__attribute__((noreturn)) void _start(void) { 
+_noreturn void _start(void) { 
   framebuffer_init();
   serial_init();
   printk(" -- Welcome to Qnixx --\n\n");
 
   init_mm();
+  load_gdt();
   load_idt();
 
   init_interrupts();
