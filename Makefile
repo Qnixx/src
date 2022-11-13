@@ -12,7 +12,7 @@ LD = cross/bin/x86_64-elf-ld
 
 
 .PHONY: all
-all: TauLang cfiles taufiles link limine cleanup
+all: TauLang cfiles asmfiles taufiles link limine cleanup
 	mkdir -p iso_root
 	mkdir -p iso_root/Qnixx
 	cp etc/limine.cfg \
@@ -35,6 +35,9 @@ link:
 .PHONY: cfiles
 cfiles: $(CFILES)
 	$(CC) -march=x86-64 $(CFLAGS) -c $^ -Isys/include/
+
+asmfiles:
+	for source in $$(find sys/src/ -name "*.asm"); do nasm -felf64 $$source; done
 
 .PHONY: taufiles
 taufiles:
