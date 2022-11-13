@@ -3,6 +3,7 @@
 #include <lib/log.h>
 #include <lib/string.h>
 #include <lib/module.h>
+#include <lib/logo.h>
 #include <mm/pmm.h>
 #include <arch/x86/gdt.h>
 #include <arch/x64/idt.h>
@@ -33,7 +34,8 @@ static void init_drivers(void) {
 _noreturn void _start(void) { 
   framebuffer_init();
   serial_init();
-  printk(" -- Welcome to Qnixx --\n\n");
+  printk(" -- Welcome to Qnixx --\n");
+  printk(logo);
 
   init_mm();
   load_gdt();

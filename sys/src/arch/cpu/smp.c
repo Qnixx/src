@@ -3,6 +3,7 @@
 #include <arch/x86/apic/lapic.h>
 #include <intr/intr.h>
 #include <mm/vmm.h>
+#include <mm/heap.h>
 #include <lib/limine.h>
 #include <lib/module.h>
 #include <lib/log.h>
@@ -46,7 +47,7 @@ _noreturn static void core_init(struct limine_smp_info* info) {
 }
 
 
-void smp_init(core_t* core_list) {
+void smp_init(core_t** core_list_ptr) {
   smp_resp = smp_req.response;
   start_pml4 = mkpml4();
   core_count = smp_resp->cpu_count;
@@ -60,9 +61,16 @@ void smp_init(core_t* core_list) {
   }
 
   printk("[%s]: Bootstraping cores 1-%d", MODULE_NAME, core_count - 1);
+  *core_list_ptr = kmalloc(sizeof(core_t) * core_count);
   for (size_t i = 0; i < core_count; ++i) {
     cores[i]->extra_argument = start_pml4;
     cores[i]->goto_address = core_init;
+
+    (*core_list_ptr)[i].roll = 0;
+    (*core_list_ptr)[i].queue_head = 0;
+    (*core_list_ptr)[i].queue_base = 0;
+    (*core_list_ptr)[i].queue_size = 0;
+    (*core_list_ptr)[i].lapic_id = cores[i]->lapic_id;
 
     if (cores[i]->lapic_id != smp_resp->bsp_lapic_id)
       printk(".");
