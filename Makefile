@@ -37,6 +37,7 @@ install_limine:
 	@cp limine/BOOTX64.EFI $(INSTALL_DIR)/EFI/BOOT/BOOTX64.EFI
 
 install_qnixx:
+	@echo "Installing Qnixx..."
 	@mkdir -p $(INSTALL_DIR)/Qnixx
 	@cp etc/limine.cfg $(INSTALL_DIR)/limine.cfg
 	@cp sys/kernel.sys meta/internals/* $(INSTALL_DIR)/Qnixx/
