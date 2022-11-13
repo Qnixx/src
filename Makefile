@@ -1,4 +1,5 @@
 LOCAL_IP = 192.168.1.152
+INSTALL_DIR = /media/kai/6402-F321
 CFILES = $(shell find sys/src/ -name "*.c")
 CFLAGS = -fexceptions -std=gnu11 -ffreestanding -fno-stack-protector \
   -fno-pic -Werror=implicit -Werror=implicit-function-declaration -Werror=implicit-int \
@@ -13,43 +14,63 @@ LD = cross/bin/x86_64-elf-ld
 
 .PHONY: all
 all: TauLang cfiles asmfiles taufiles link limine cleanup
-	mkdir -p iso_root
-	mkdir -p iso_root/Qnixx
-	cp etc/limine.cfg \
+	@echo "Generating ISO..."
+	@mkdir -p iso_root
+	@mkdir -p iso_root/Qnixx
+	@cp etc/limine.cfg \
 		limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso_root/
-	cp sys/kernel.sys meta/internals/* iso_root/Qnixx/
-	xorriso -as mkisofs -b limine-cd.bin \
+	@cp sys/kernel.sys meta/internals/* iso_root/Qnixx/
+	@xorriso -as mkisofs -b limine-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
 		--efi-boot limine-cd-efi.bin \
 		-efi-boot-part --efi-boot-image --protective-msdos-label \
 		iso_root -o Qnixx.iso
-	limine/limine-deploy Qnixx.iso
-	rm -rf iso_root
+	@echo "Deploying Limine..."
+	@limine/limine-deploy Qnixx.iso
+	@rm -rf iso_root
 
+
+install_limine:
+	@echo "Installing Limine..."
+	@mkdir -p $(INSTALL_DIR)/EFI/BOOT
+	@cp limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin $(INSTALL_DIR)/
+	@cp limine/BOOTX64.EFI $(INSTALL_DIR)/EFI/BOOT/BOOTX64.EFI
+
+install_qnixx:
+	@echo "Installing Qnixx..."
+	@mkdir -p $(INSTALL_DIR)/Qnixx
+	@cp etc/limine.cfg $(INSTALL_DIR)/limine.cfg
+	@cp sys/kernel.sys meta/internals/* $(INSTALL_DIR)/Qnixx/
 
 .PHONY: link
 link:
-	mv $(shell find sys/src/ -name "*.o") ./
-	$(LD) *.o -nostdlib -zmax-page-size=0x1000 -static -Tsys/link.ld -o sys/kernel.sys
+	@echo "Linking object files..."
+	@mv $(shell find sys/src/ -name "*.o") ./
+	@$(LD) *.o -nostdlib -zmax-page-size=0x1000 -static -Tsys/link.ld -o sys/kernel.sys
 
 .PHONY: cfiles
 cfiles: $(CFILES)
-	$(CC) -march=x86-64 $(CFLAGS) -c $^ -Isys/include/
+	@echo "Compiling C sources..."
+	@$(CC) -march=x86-64 $(CFLAGS) -c $^ -Isys/include/
 
 asmfiles:
-	for source in $$(find sys/src/ -name "*.asm"); do nasm -felf64 $$source; done
+	@echo "Compiling assembly sources..."
+	@for source in $$(find sys/src/ -name "*.asm"); do nasm -felf64 $$source; done
 
 .PHONY: taufiles
 taufiles:
-	for source in $$(find sys/src/ -name "*.tau"); do	tau -i $$source -c -o "$$source.o"; done
+	@echo "Compiling TauLang sources..."
+	@for source in $$(find sys/src/ -name "*.tau"); do	tau -i $$source -c -o "$$source.o"; done
 
 limine:
-	git clone https://github.com/limine-bootloader/limine.git --branch=v4.0-binary --depth=1
-	make -C limine
+	@echo "Fetching Limine binaries..."
+	@git clone https://github.com/limine-bootloader/limine.git --branch=v4.0-binary --depth=1
+	@make -C limine
 
 TauLang: 
-	git clone https://github.com/Ian-Marco-Moffett/TauLang
-	cd TauLang; make; make install_linux
+	@echo "Building and installing TauLang compiler..."
+	@git clone https://github.com/Ian-Marco-Moffett/TauLang
+	@cd TauLang; make; make install_linux
 
 .PHONY: debug_kvm
 debug_kvm:
@@ -72,4 +93,5 @@ toolchain:
 
 .PHONY:
 cleanup:
-	rm *.o
+	@echo "Cleaning up..."
+	@rm *.o

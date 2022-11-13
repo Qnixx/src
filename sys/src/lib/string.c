@@ -1,9 +1,10 @@
 #include <lib/string.h>
 
 size_t kstrlen(const char* str) {
-    size_t i = 0;
-    while (str[i++]);
-    return i - 1;
+    const char* s2 = str;
+    while(*s2) s2++;
+
+    return (s2 - str);
 }
 
 
@@ -53,9 +54,12 @@ char* dec2str(size_t number) {
 
 
 void kmemcpy(void* dst, const void* src, size_t len) {
-    for (size_t i = 0; i < len; ++i) {
-        ((uint8_t*)dst)[i] = ((uint8_t*)src)[i];
-    }
+    asm(
+        "cld\n"
+        "rep\n"
+        "movsb\n"
+        ::"c"(len), "S"(src), "D"(dst)
+    );
 }
 
 
@@ -113,21 +117,49 @@ uint8_t* kstrncpy(uint8_t *dst, const uint8_t *src, const uint8_t len) {
 
 
 void kmemzero(void* ptr, size_t n) {
-	char* ptr_ch = ptr;
-
-	for (size_t i = 0; i < n; ++i) {
-        // kprintf("A, %d\n", i);
-		ptr_ch[i] = 0;
-	}
+    asm(
+        "cld\n"
+        "rep\n"
+        "stosb\n"
+        ::"a"(0), "D"(ptr), "c"(n)
+    );
 }
 
 
-void kmemset(void* ptr, uint64_t data, size_t n) {
-    char* ptr_ch = ptr;
+void kmemset(void* ptr, uint8_t data, size_t n) {
+    asm(
+        "cld\n"
+        "rep\n"
+        "stosb\n"
+        ::"a"(data), "D"(ptr), "c"(n)
+    );
+}
 
-	for (size_t i = 0; i < n; ++i) {
-		ptr_ch[i] = data;
-	}
+void kmemset16(void* ptr, uint16_t data, size_t n) {
+    asm(
+        "cld\n"
+        "rep\n"
+        "stosw\n"
+        ::"a"(data), "D"(ptr), "c"(n)
+    );
+}
+
+void kmemset32(void* ptr, uint32_t data, size_t n) {
+    asm(
+        "cld\n"
+        "rep\n"
+        "stosl\n"
+        ::"a"(data), "D"(ptr), "c"(n)
+    );
+}
+
+void kmemset64(void* ptr, uint64_t data, size_t n) {
+    asm(
+        "cld\n"
+        "rep\n"
+        "stosq\n"
+        ::"a"(data), "D"(ptr), "c"(n)
+    );
 }
 
 

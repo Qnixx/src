@@ -70,7 +70,7 @@ static void recieve(void) {
   PRINTK_SERIAL("[%s]: Recieved %d bytes of data.\n", MODULE_NAME, length);
 }
 
-__attribute__((interrupt)) static void isr(void* stackframe) {
+_isr static void isr(void* stackframe) {
   for(;;) {
     uint16_t status = inw(iobase + REG_ISR);
     outw(iobase + REG_ISR, status);
@@ -81,22 +81,25 @@ __attribute__((interrupt)) static void isr(void* stackframe) {
       PRINTK_SERIAL("[%s]: TX complete.\n", MODULE_NAME);
     }
 
+    if (status & INT_TXERR) {
+      printk("[%s]: TX error.\n", MODULE_NAME);
+    }
+
     if (status & INT_RXOK) {
-      PRINTK_SERIAL("[%s]: RX ready.\n", MODULE_NAME);
       recieve();
       got_packet = 1;
     }
 
     if (status & INT_RXERR) {
-      PRINTK_SERIAL("[%s]: RX error.\n", MODULE_NAME);
+      printk("[%s]: RX error.\n", MODULE_NAME);
     }
 
     if (status & INT_RX_BUFFER_OVERFLOW) {
-      PRINTK_SERIAL("[%s]: RX buffer overflow.\n", MODULE_NAME);
+      printk("[%s]: RX buffer overflow.\n", MODULE_NAME);
     }
 
     if (status & INT_LINK_CHANGE) { 
-      PRINTK_SERIAL("[%s]: Link status changed, STATE=%s\n", MODULE_NAME, link_up() ? "UP" : "DOWN");
+      printk("[%s]: Link status changed, STATE=%s\n", MODULE_NAME, link_up() ? "UP" : "DOWN");
     } 
   }
 

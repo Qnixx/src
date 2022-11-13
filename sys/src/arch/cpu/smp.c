@@ -60,6 +60,7 @@ void smp_init(core_t** core_list_ptr) {
     panic();
   }
 
+  printk("[%s]: Bootstraping cores 1-%d", MODULE_NAME, core_count - 1);
   *core_list_ptr = kmalloc(sizeof(core_t) * core_count);
   for (size_t i = 0; i < core_count; ++i) {
     cores[i]->extra_argument = start_pml4;
@@ -72,6 +73,7 @@ void smp_init(core_t** core_list_ptr) {
     (*core_list_ptr)[i].lapic_id = cores[i]->lapic_id;
 
     if (cores[i]->lapic_id != smp_resp->bsp_lapic_id)
-      printk("[%s]: Bootstrapped core with LAPIC of %d\n", MODULE_NAME, cores[i]->lapic_id);
+      printk(".");
   }
+  printk("\n");
 }

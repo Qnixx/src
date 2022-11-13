@@ -1,5 +1,6 @@
 #include <lib/limine.h>
 #include <lib/font.h>
+#include <lib/string.h>
 #include <drivers/video/framebuffer.h>
 
 
@@ -58,11 +59,7 @@ uint32_t framebuffer_get_height(void) {
 
 
 void framebuffer_clear(uint32_t color) {
-  for (uint32_t y = 0; y < framebuffer->height; ++y) {
-    for (uint32_t x = 0; x < framebuffer->pitch; ++x) {
-      framebuffer_putpix(x, y, color);
-    }
-  }
+  kmemset32((uint32_t*)(framebuffer->address), color, framebuffer->width * framebuffer->height);
 }
 
 
