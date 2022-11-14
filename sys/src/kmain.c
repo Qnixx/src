@@ -51,11 +51,10 @@ _noreturn void _start(void) {
   init_drivers();
   ASMV("sti");
   
-  uint8_t payload[4] = { 0x00, 0x05, 0x00, 0x01 };
+  // uint8_t payload[4] = { 0x00, 0x05, 0x00, 0x01 };
   // icmp_send_msg(IPv4(192, 168, 1, 152), 8, 0, payload, sizeof(payload));
   // 192.168.1.166
-  udp_send(IPv4(192, 168, 1, 166), payload, sizeof(payload));
-
+  // udp_send(IPv4(192, 168, 1, 152), payload, sizeof(payload));
   tasking_init();
 
   while (1);
