@@ -82,7 +82,7 @@ _isr static void isr(void* stackframe) {
     }
 
     if (status & INT_TXERR) {
-      printk("[%s]: TX error.\n", MODULE_NAME);
+      PRINTK_SERIAL("[%s]: TX error.\n", MODULE_NAME);
     }
 
     if (status & INT_RXOK) {
@@ -91,15 +91,15 @@ _isr static void isr(void* stackframe) {
     }
 
     if (status & INT_RXERR) {
-      printk("[%s]: RX error.\n", MODULE_NAME);
+      PRINTK_SERIAL("[%s]: RX error.\n", MODULE_NAME);
     }
 
     if (status & INT_RX_BUFFER_OVERFLOW) {
-      printk("[%s]: RX buffer overflow.\n", MODULE_NAME);
+      PRINTK_SERIAL("[%s]: RX buffer overflow.\n", MODULE_NAME);
     }
 
     if (status & INT_LINK_CHANGE) { 
-      printk("[%s]: Link status changed, STATE=%s\n", MODULE_NAME, link_up() ? "UP" : "DOWN");
+      PRINTK_SERIAL("[%s]: Link status changed, STATE=%s\n", MODULE_NAME, link_up() ? "UP" : "DOWN");
     } 
   }
 
