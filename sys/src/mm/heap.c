@@ -2,6 +2,7 @@
 #include <mm/heap.h>
 #include <lib/module.h>
 #include <lib/log.h>
+#include <lib/string.h>
 
 MODULE("heap");
 
@@ -70,6 +71,15 @@ void kfree(void* ptr) {
 #if HEAP_DEBUG
   PRINTK_SERIAL("[%s]: Freed %d bytes, now %dKiB used.\n", MODULE_NAME, region->size, bytes_allocated / 1024);
 #endif
+}
+
+
+void* realloc(void* oldptr, size_t new_size) {
+  heapblk_t* region = (heapblk_t*)(oldptr - sizeof(heapblk_t));
+  uint8_t* _new = kmalloc(new_size);
+  kmemcpy(_new, oldptr, region->size);
+  kfree(oldptr);
+  return _new;
 }
 
 void heap_init(void) {
