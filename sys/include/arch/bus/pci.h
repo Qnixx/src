@@ -17,6 +17,7 @@ typedef struct {
 
 
 pci_device_t pci_find(unsigned int vendor_id, unsigned int device_id);
+pci_device_t pci_find_any(uint8_t class_code, uint8_t subclass_code, int8_t interface_value);
 void enable_bus_mastering(pci_device_t dev);
 
 
