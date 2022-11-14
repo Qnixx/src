@@ -1,6 +1,7 @@
 #include <drivers/video/framebuffer.h>
 #include <drivers/serial.h>
 #include <drivers/net/rtl8139.h>
+#include <drivers/timer/pit.h>
 #include <lib/log.h>
 #include <lib/string.h>
 #include <lib/module.h>
@@ -29,6 +30,7 @@ static void init_mm(void) {
 // TODO: Move this somewhere else.
 static void init_drivers(void) {
   rtl8139_init();
+  init_pit();
 }
 
 
