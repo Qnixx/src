@@ -1,9 +1,12 @@
 #include <proc/sched.h>
 #include <lib/rand.h>
+#include <lib/assert.h>
 #include <arch/cpu/smp.h>
+#include <mm/heap.h>
 
 
 static uint32_t core_count = 0;
+static size_t next_pid = 1;
 
 
 
@@ -51,6 +54,21 @@ core_t* sched_core(void) {
     return locate_highest_roll();
   }
   
+  return NULL;
+}
+
+
+process_t* sched_make_task(core_t* to) {
+  ASSERT(to != NULL, "to is NULL!\n");
+  if (to->queue_base == NULL) {
+    to->queue_base = kmalloc(sizeof(process_t));
+    to->queue_head = to->queue_base;
+    to->queue_base->next = NULL;
+  }
+
+  process_t* head = to->queue_head;
+  head->pid = next_pid++;
+  head->next = NULL;
   return NULL;
 }
 

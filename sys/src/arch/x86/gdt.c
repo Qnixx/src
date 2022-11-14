@@ -5,7 +5,7 @@
 
 MODULE("gdt");
 
-static struct gdt_descriptor_t gdt[] = {
+static struct gdt_descriptor gdt[] = {
   // 0x00 (NULL)
   {0}, 
 
@@ -94,7 +94,7 @@ static struct gdt_descriptor_t gdt[] = {
 };
 
 
-static struct gdtr_t gdtr = {
+static struct gdtr gdtr = {
   sizeof(gdt) - 1,
   (uintptr_t)gdt
 };

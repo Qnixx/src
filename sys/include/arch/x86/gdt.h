@@ -9,7 +9,7 @@
 #define USER_CODE   0x38
 #define USER_DATA   0x40
 
-struct gdt_descriptor_t {
+struct gdt_descriptor {
   uint16_t limit;
   uint16_t base_low;
   uint8_t base_mid;
@@ -19,12 +19,13 @@ struct gdt_descriptor_t {
 } _packed;
 
 
-struct gdtr_t {
+struct gdtr {
   uint16_t limit;
   uint64_t base;
 } _packed;
 
 
 void load_gdt(void);
+
 
 #endif

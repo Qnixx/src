@@ -1,6 +1,7 @@
 #include <arch/cpu/smp.h>
 #include <arch/x64/idt.h>
 #include <arch/x86/apic/lapic.h>
+#include <arch/x86/gdt.h>
 #include <intr/intr.h>
 #include <mm/vmm.h>
 #include <mm/heap.h>
@@ -71,6 +72,9 @@ void smp_init(core_t** core_list_ptr) {
     (*core_list_ptr)[i].queue_base = 0;
     (*core_list_ptr)[i].queue_size = 0;
     (*core_list_ptr)[i].lapic_id = cores[i]->lapic_id;
+    (*core_list_ptr)[i].gdt = kmalloc(sizeof(struct gdt_descriptor) * 10);
+    (*core_list_ptr)[i].gdtr = kmalloc(sizeof(struct gdtr));
+    
 
     if (cores[i]->lapic_id != smp_resp->bsp_lapic_id)
       printk(".");
