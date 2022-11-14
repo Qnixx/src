@@ -1,5 +1,6 @@
 #include <drivers/video/framebuffer.h>
 #include <drivers/serial.h>
+#include <drivers/net/rtl8139.h>
 #include <lib/log.h>
 #include <lib/string.h>
 #include <lib/module.h>
@@ -10,10 +11,10 @@
 #include <arch/x86/apic/lapic.h>
 #include <arch/x86/apic/ioapic.h>
 #include <intr/intr.h>
-#include <drivers/net/rtl8139.h>
 #include <mm/heap.h>
 #include <firmware/acpi/acpi.h>
 #include <net/udp.h>
+#include <net/if.h>
 #include <proc/proc.h>
 
 MODULE("kmain");
@@ -50,6 +51,8 @@ _noreturn void _start(void) {
 
   init_drivers();
   ASMV("sti");
+
+  if_manager_init();
   
   // uint8_t payload[4] = { 0x00, 0x05, 0x00, 0x01 };
   // icmp_send_msg(IPv4(192, 168, 1, 152), 8, 0, payload, sizeof(payload));

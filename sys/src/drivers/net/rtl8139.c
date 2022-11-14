@@ -1,5 +1,5 @@
 #include <drivers/net/rtl8139.h>
-#include <net/ethernet.h>
+#include <net/if.h>
 #include <arch/bus/pci.h>
 #include <arch/x86/io.h>
 #include <arch/x86/apic/lapic.h>
@@ -159,6 +159,9 @@ void rtl8139_init(void) {
   }
 
   printk("[%s]: RTL8139 card is attached on PCI bus %d, slot %d\n", MODULE_NAME, dev.bus, dev.slot);
+
+  uint16_t interface_id = create_interface("eth");
+  printk("[%s]: Created new interface @eth%d\n", MODULE_NAME, interface_id);
   
   // Enable bus mastering.
   enable_bus_mastering(dev);
