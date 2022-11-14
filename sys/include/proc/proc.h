@@ -25,6 +25,10 @@ typedef struct {
   uint64_t r15;
   uint64_t rbp;
   uint64_t trapno;
+  uint64_t rip;
+  uint64_t cs;
+  uint64_t rflags;
+  uint64_t rsp;
 } _packed trapframe_t;
 
 

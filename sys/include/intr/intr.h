@@ -3,5 +3,6 @@
 
 
 void init_interrupts(void);
+void init_etc_irqs(void);
 
 #endif

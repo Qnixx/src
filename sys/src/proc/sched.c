@@ -1,6 +1,7 @@
 #include <proc/sched.h>
 #include <lib/rand.h>
 #include <lib/assert.h>
+#include <lib/string.h>
 #include <arch/cpu/smp.h>
 #include <mm/heap.h>
 
@@ -63,13 +64,16 @@ process_t* sched_make_task(core_t* to) {
   if (to->queue_base == NULL) {
     to->queue_base = kmalloc(sizeof(process_t));
     to->queue_head = to->queue_base;
-    to->queue_base->next = NULL;
+  } else {
+    to->queue_head->next = kmalloc(sizeof(process_t));
+    to->queue_head = to->queue_head->next;
   }
 
   process_t* head = to->queue_head;
+  kmemzero(&head->tf, sizeof(trapframe_t));
   head->pid = next_pid++;
   head->next = NULL;
-  return NULL;
+  return head;
 }
 
 
