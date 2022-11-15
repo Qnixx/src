@@ -55,11 +55,11 @@ uint16_t create_interface(const char* idstr) {
     // This interface doesn't exist, create new one.
     if_list[*if_list_size_ptr].idstr = idstr;
     if_list[*if_list_size_ptr++].id = 0;
-    if_list = realloc(if_list, sizeof(net_interface_t) * (*if_list_size_ptr + 1));
+    if_list = krealloc(if_list, sizeof(net_interface_t) * (*if_list_size_ptr + 1));
   } else {
     if_list[*if_list_size_ptr].idstr = idstr;
     if_list[*if_list_size_ptr++].id = target->id + 1;
-    if_list = realloc(if_list, sizeof(net_interface_t) * (*if_list_size_ptr + 1));
+    if_list = krealloc(if_list, sizeof(net_interface_t) * (*if_list_size_ptr + 1));
   }
 
   return if_list[*if_list_size_ptr - 1].id;

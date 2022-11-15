@@ -74,7 +74,7 @@ void kfree(void* ptr) {
 }
 
 
-void* realloc(void* oldptr, size_t new_size) {
+void* krealloc(void* oldptr, size_t new_size) {
   heapblk_t* region = (heapblk_t*)(oldptr - sizeof(heapblk_t));
   uint8_t* _new = kmalloc(new_size);
   kmemcpy(_new, oldptr, region->size);

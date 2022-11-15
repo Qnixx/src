@@ -14,7 +14,7 @@ typedef struct heapblk_t {
 } heapblk_t;
 
 void* kmalloc(size_t size);
-void* realloc(void* oldptr, size_t new_size);
+void* krealloc(void* oldptr, size_t new_size);
 void kfree(void* ptr);
 void heap_init(void);
 
