@@ -51,7 +51,7 @@ link:
 .PHONY: cfiles
 cfiles: $(CFILES)
 	@echo "Compiling C sources..."
-	@$(CC) -march=x86-64 $(CFLAGS) -c $^ -Isys/include/
+	@$(CC) -march=x86-64 $(CFLAGS) -c $^ -Isys/include/ -D_KERNEL
 
 asmfiles:
 	@echo "Compiling assembly sources..."
