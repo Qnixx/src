@@ -17,6 +17,7 @@
 #include <net/udp.h>
 #include <net/if.h>
 #include <proc/proc.h>
+#include <fs/vfs.h>
 
 MODULE("kmain");
 
@@ -31,6 +32,11 @@ static void init_mm(void) {
 static void init_drivers(void) {
   rtl8139_init();
   init_pit();
+}
+
+
+static void fs_init(void) {
+  vfs_init();
 }
 
 
@@ -50,6 +56,7 @@ _noreturn void _start(void) {
   lapic_init();
 
   ioapic_init();
+  fs_init();
 
   init_drivers();
   ASMV("sti");
