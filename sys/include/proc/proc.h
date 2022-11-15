@@ -5,6 +5,8 @@
 #include <lib/types.h>
 #include <lib/asm.h>
 
+#define PSTACK_SIZE 0x1000
+
 typedef uint16_t pid_t;
 
 
@@ -26,23 +28,29 @@ typedef struct {
   uint64_t rbp;
   uint64_t trapno;
   uint64_t rip;
-  uint64_t cs;
+  uint16_t cs;
   uint64_t rflags;
   uint64_t rsp;
+  uint16_t ss;
 } _packed trapframe_t;
 
 
 typedef struct Process {
   pid_t pid;
-  trapframe_t tf;
+  trapframe_t tf; 
+  uint64_t rsp;
+  uint64_t stack_base;
+  uint64_t cr3;
+  uint8_t is_ring3;
   struct Process* next;
 } process_t;
 
 
 typedef struct {
   size_t lapic_id;
-  process_t* queue_head;
-  process_t* queue_base;
+  process_t* queue_head;          // First process in queue.
+  process_t* queue_base;          // Last process in queue.
+  process_t* running_process;
   size_t queue_size;
 
   // Descriptor tables.
@@ -56,6 +64,11 @@ typedef struct {
 
 
 _noreturn void tasking_init(void);
+uint64_t get_rip(void);
+void proc_clone(uint64_t to_rip);
+
+core_t* proc_find_core(size_t lapic_id);
+
 extern core_t* proc_cores;
 
 #endif

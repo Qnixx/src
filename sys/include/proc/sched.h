@@ -3,12 +3,12 @@
 
 #include <proc/proc.h>
 
-
 core_t* sched_core(void);
 
 // Pushes a task to a core's queue.
-process_t* sched_make_task(core_t* to);
+process_t* sched_make_task(core_t* to, uint8_t is_ring3);
 
 void sched_init(void);
+void sched(trapframe_t* tf);
 
 #endif

@@ -6,88 +6,138 @@
 #define INTR_END \
   ASMV("cli; hlt\n");
 
+typedef struct {
+  uint64_t error_code;
+  uint64_t rip;
+  uint64_t cs;
+  uint64_t rflags;
+  uint64_t rsp;
+  uint64_t ss;
+} stackframe_t;
+
+
+static void dump_state(void* stackframe) {
+  stackframe_t* frame = stackframe;
+  printk(PRINTK_PANIC "-- Begin dump of exception stackframe --\n");
+  printk(PRINTK_PANIC "ERROR_CODE=%x RIP=%x\n", frame->error_code, frame->rip);
+  printk(PRINTK_PANIC "RFLAGS=%x RSP=%x\n", frame->rflags, frame->rsp);
+  printk(PRINTK_PANIC "SS=%x\n", frame->ss);
+}
+
 E_ISR(0x0) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Division by zero\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0x1) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Debug exception\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0x2) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Non-Maskable Interrupt\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0x3) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Breakpoint exception\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0x4) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Overflow exception\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0x5) {
+  ASMV("cli");
   printk(PRINTK_PANIC "BOUND range exceeded\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0x6) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Invalid opcode\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0x7) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Coprocessor not available\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0x8) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Double fault\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0x9) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Coprocessor segment overrun\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0xA) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Invalid TSS\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0xB) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Segment not present\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0xC) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Stack segment fault\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0xD) {
+  ASMV("cli");
   printk(PRINTK_PANIC "General protection fault\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0xE) {
+  ASMV("cli");
   printk(PRINTK_PANIC "Page fault\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0xF) {
   printk(PRINTK_PANIC "Reserved exception\n");
+  dump_state(stackframe);
   INTR_END;
 }
 
 E_ISR(0x10) {
   printk(PRINTK_PANIC "Coprocessor error\n");
+  dump_state(stackframe);
   INTR_END;
 }
 

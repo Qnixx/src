@@ -2,7 +2,9 @@
 #include <lib/rand.h>
 #include <lib/assert.h>
 #include <lib/string.h>
+#include <lib/asm.h>
 #include <arch/cpu/smp.h>
+#include <arch/x86/apic/lapic.h>
 #include <mm/heap.h>
 
 
@@ -59,7 +61,7 @@ core_t* sched_core(void) {
 }
 
 
-process_t* sched_make_task(core_t* to) {
+process_t* sched_make_task(core_t* to, uint8_t is_ring3) {
   ASSERT(to != NULL, "to is NULL!\n");
   if (to->queue_base == NULL) {
     to->queue_base = kmalloc(sizeof(process_t));
@@ -72,8 +74,35 @@ process_t* sched_make_task(core_t* to) {
   process_t* head = to->queue_head;
   kmemzero(&head->tf, sizeof(trapframe_t));
   head->pid = next_pid++;
+  
+  // TODO: For userspace tasks, allocate memory on the lower half instead of higher half.
+  // NOTE: kmalloc() allocates on higher half.
+  if (!(is_ring3)) {
+    head->stack_base = (uint64_t)kmalloc(PSTACK_SIZE);
+    head->rsp = head->stack_base + PSTACK_SIZE-1;
+  }
+
+  head->is_ring3 = is_ring3;
   head->next = NULL;
   return head;
+}
+
+
+void sched(trapframe_t* tf) {
+  // Copy current trapframe into current process's copy.
+  core_t* this_core = proc_find_core(lapic_read_id());
+  kmemcpy(&this_core->running_process->tf, tf, sizeof(trapframe_t));
+
+  // Switch tasks.
+  if (this_core->running_process->next) {
+    this_core->running_process = this_core->running_process->next;
+  } else {
+    this_core->running_process = this_core->queue_base;
+  }
+  
+  // Copy trapframe copy into current trapframe and switch CR3.
+  kmemcpy(tf, &this_core->running_process->tf, sizeof(trapframe_t));
+  ASMV("mov %0, %%cr3" :: "a" (this_core->running_process->cr3));
 }
 
 

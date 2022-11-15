@@ -70,6 +70,7 @@ void smp_init(core_t** core_list_ptr) {
     (*core_list_ptr)[i].roll = 0;
     (*core_list_ptr)[i].queue_head = 0;
     (*core_list_ptr)[i].queue_base = 0;
+    (*core_list_ptr)[i].running_process = 0;
     (*core_list_ptr)[i].queue_size = 0;
     (*core_list_ptr)[i].lapic_id = cores[i]->lapic_id;
     (*core_list_ptr)[i].gdt = kmalloc(sizeof(struct gdt_descriptor) * 10);
