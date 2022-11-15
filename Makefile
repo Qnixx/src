@@ -13,13 +13,13 @@ LD = cross/bin/x86_64-elf-ld
 
 
 .PHONY: all
-all: TauLang cfiles asmfiles taufiles link limine cleanup
+all: romfs TauLang cfiles asmfiles taufiles link limine cleanup
 	@echo "Generating ISO..."
 	@mkdir -p iso_root
 	@mkdir -p iso_root/Qnixx
 	@cp etc/limine.cfg \
 		limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso_root/
-	@cp sys/kernel.sys meta/internals/* iso_root/Qnixx/
+	@cp sys/kernel.sys meta/system/*.sys iso_root/Qnixx/
 	@xorriso -as mkisofs -b limine-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
 		--efi-boot limine-cd-efi.bin \
@@ -40,7 +40,7 @@ install_qnixx:
 	@echo "Installing Qnixx..."
 	@mkdir -p $(INSTALL_DIR)/Qnixx
 	@cp etc/limine.cfg $(INSTALL_DIR)/limine.cfg
-	@cp sys/kernel.sys meta/internals/* $(INSTALL_DIR)/Qnixx/
+	@cp sys/kernel.sys meta/system/* $(INSTALL_DIR)/Qnixx/
 
 .PHONY: link
 link:
@@ -71,6 +71,10 @@ TauLang:
 	@echo "Building and installing TauLang compiler..."
 	@git clone https://github.com/Ian-Marco-Moffett/TauLang
 	@cd TauLang; make; make install_linux
+
+.PHONY:
+romfs:
+	mv meta/system/raw/ ./; cd raw; tar -cvf ../meta/system/romfs.sys *; cd ../; mv raw meta/system/
 
 .PHONY: debug_kvm
 debug_kvm:
