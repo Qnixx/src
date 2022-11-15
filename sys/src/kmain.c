@@ -2,6 +2,7 @@
 #include <drivers/serial.h>
 #include <drivers/net/rtl8139.h>
 #include <drivers/timer/pit.h>
+#include <drivers/hdd/ahci.h>
 #include <lib/log.h>
 #include <lib/string.h>
 #include <lib/module.h>
@@ -31,6 +32,7 @@ static void init_mm(void) {
 static void init_drivers(void) {
   rtl8139_init();
   init_pit();
+  ahci_init();
 }
 
 
