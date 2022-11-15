@@ -74,7 +74,6 @@ TauLang:
 
 .PHONY:
 romfs:
-	mkdir -p meta/system/raw
 	mv meta/system/raw/ ./; cd raw; tar -cvf ../meta/system/romfs.sys *; cd ../; mv raw meta/system/
 
 .PHONY: debug_kvm
