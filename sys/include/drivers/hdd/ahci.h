@@ -63,6 +63,51 @@ typedef struct HBA_CMD_HEADER {
   uint32_t rsv1[4];         // Reserved.
 } HBA_CMD_HEADER;
 
+typedef struct HBA_PRDT_ENTRY {
+  uint32_t dba;     // Data base address (low).
+  uint32_t dbau;    // Data base address (high).
+  uint32_t rsv0;    // Reserved.
+  
+  uint32_t dbc : 22;
+  uint32_t rsv1 : 9;
+  uint32_t i : 1;
+} HBA_PRDT_ENTRY;
+
+
+typedef struct HBA_CMD_TBL {
+  uint8_t cfis[64];
+  uint8_t acmd[16];
+  uint8_t rsv[48];
+  HBA_PRDT_ENTRY prdt_entry[1];
+} HBA_CMD_TBL;
+
+
+typedef struct FIS_REG_H2D {
+  uint8_t fis_type;             // FIS_TYPE_REG_H2D.
+  uint8_t pmport : 4;           // Port multiplier.
+  uint8_t rsv0 : 3;             // Reserved.
+  uint8_t c : 1;                // 1: Command, 0: Control.
+  uint8_t command;              // Command register.
+  uint8_t featurel;             // Feature register (low).
+  
+  uint8_t lba0;
+  uint8_t lba1;
+  uint8_t lba2;
+  uint8_t device;
+
+  uint8_t lba3;
+  uint8_t lba4;
+  uint8_t lba5;
+  uint8_t featureh;               // Feature register (high).
+  
+  uint8_t countl;
+  uint8_t counth;
+  uint8_t icc;
+  uint8_t control;
+
+  uint8_t rsv1[1];                // Reserved.
+} FIS_REG_H2D;
+
 
 void ahci_init(void);
 

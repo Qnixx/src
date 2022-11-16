@@ -7,6 +7,8 @@
 #include <mm/heap.h>
 #include <mm/vmm.h>
 
+#define AHCI_DEBUG 1
+
 MODULE("ahci");
 
 #define SATA_CONTROLLER_PCI_CLASS 0x01
@@ -34,6 +36,122 @@ MODULE("ahci");
 
 static pci_device_t dev;
 static HBA_MEM* abar = NULL;
+static HBA_PORT* sata = NULL;
+
+
+static int find_cmdslot(HBA_PORT* p) {
+  uint32_t slots = (p->sact | p->ci);
+  uint32_t n_slots = (abar->cap >> 8) & 0xF0;
+
+  for (uint32_t i = 0; i < n_slots; ++i, slots >>= 1) {
+    if (!(slots & 1)) {
+      return i;
+    }
+  }
+
+  PRINTK_SERIAL("[%s]: Failed to find free command list entry.\n", MODULE_NAME);
+  return -1;
+}
+
+
+static uint32_t check_type(HBA_PORT* p) {
+  uint32_t ssts = p->ssts;
+  uint8_t ipm = (ssts >> 8) & 0x0F;
+  uint8_t det = ssts & 0x0F;
+
+  if (det != HBA_PORT_DET_PRESENT || ipm != HBA_PORT_IPM_ACTIVE) {
+    return AHCI_DEV_NULL;
+  }
+
+  switch (p->sig) {
+    case SATA_SIG_ATAPI:
+      return AHCI_DEV_SATAPI;
+    case SATA_SIG_SEMB:
+      return AHCI_DEV_SEMB;
+    case SATA_SIG_PM:
+      return AHCI_DEV_PM;
+    default:
+      return AHCI_DEV_SATA;
+  }
+}
+
+
+static uint8_t read_disk_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
+  if (check_type(port) != AHCI_DEV_SATA)
+    return 1;
+
+  if (AHCI_DEBUG) {
+    PRINTK_SERIAL("[%s] Reading SATA drive.. (LBA=%d, sector_count=%d)\n", MODULE_NAME, lba, sector_count);
+  }
+
+  uint64_t buf_phys = (uint64_t)buf - VMM_HIGHER_HALF;
+
+  port->is = (uint32_t)-1;
+  
+  int32_t spin = 1000000;    // Spin lock counter to prevent getting stuck.
+  int cmdslot = find_cmdslot(port);
+
+  if (cmdslot == -1) {
+    return 1;
+  }
+
+  uint64_t port_clb = ((uint64_t)port->clbu << 32 | port->clb) + VMM_HIGHER_HALF;
+  HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)port_clb;
+  cmdheader[cmdslot].cfl = sizeof(FIS_REG_H2D)/sizeof(uint32_t);
+  cmdheader[cmdslot].w = 0;
+
+  uint64_t ctba = ((uint64_t)cmdheader[cmdslot].ctbau << 32 | cmdheader[cmdslot].ctba) + VMM_HIGHER_HALF;
+  HBA_CMD_TBL* cmdtable = (HBA_CMD_TBL*)ctba;
+
+
+  cmdtable->prdt_entry[0].dba = buf_phys & 0xFFFFFFFF;
+  cmdtable->prdt_entry[0].dbau = buf_phys >> 32;
+  cmdtable->prdt_entry[0].dbc = 512*sector_count-1;
+  cmdtable->prdt_entry[0].i = 1;
+
+  FIS_REG_H2D* cmdfis = (FIS_REG_H2D*)cmdtable->cfis;
+  cmdfis->fis_type = 0x27;  // Host to device.
+  cmdfis->c = 1;            // Command.
+  cmdfis->command = 0x25;   // Read DMA extended.
+  cmdfis->lba0 = lba & 0xFF;
+  cmdfis->lba1 = (lba >> 8) & 0xFF;
+  cmdfis->lba2 = (lba >> 16) & 0xFF;
+  cmdfis->device = 64;      // LBA mode.
+  cmdfis->lba3 = (lba >> 24) & 0xFF;
+  cmdfis->lba4 = (lba >> 32) & 0xFF;
+  cmdfis->lba5 = (lba >> 40) & 0xFF;
+  cmdfis->countl = (sector_count & 0xFF);
+  cmdfis->counth = (sector_count >> 8) & 0xFF;
+
+  while (port->tfd & (1 << 7) && port->tfd & (1 << 3)) {
+    --spin;
+
+    if (!(spin)) {
+      PRINTK_SERIAL("[%s]: HBA port hung.\n", MODULE_NAME);
+      return 1;
+    }
+  }
+
+  port->ci = 1 << cmdslot;      // Issue command.
+  
+  while (1) {
+    if (port->is & (1 << 30)) {
+      PRINTK_SERIAL("[%s]: Disk read error!\n", MODULE_NAME);
+      return 1;
+    }
+
+    if (!(port->ci & (1 << cmdslot))) {
+      break;
+    }
+  }
+
+  if (port->is & (1 << 30)) {
+      PRINTK_SERIAL("[%s]: Disk read error!\n", MODULE_NAME);
+      return 1;
+  }
+
+  return 0;
+}
 
 
 static void stop_cmd(HBA_PORT* port) {
@@ -109,27 +227,6 @@ static void port_init(HBA_PORT* port) {
 }
 
 
-static uint32_t check_type(HBA_PORT* p) {
-  uint32_t ssts = p->ssts;
-  uint8_t ipm = (ssts >> 8) & 0x0F;
-  uint8_t det = ssts & 0x0F;
-
-  if (det != HBA_PORT_DET_PRESENT || ipm != HBA_PORT_IPM_ACTIVE) {
-    return AHCI_DEV_NULL;
-  }
-
-  switch (p->sig) {
-    case SATA_SIG_ATAPI:
-      return AHCI_DEV_SATAPI;
-    case SATA_SIG_SEMB:
-      return AHCI_DEV_SEMB;
-    case SATA_SIG_PM:
-      return AHCI_DEV_PM;
-    default:
-      return AHCI_DEV_SATA;
-  }
-}
-
 static void find_ports(void) {
   uint32_t pi = abar->pi;
 
@@ -139,6 +236,9 @@ static void find_ports(void) {
 
       switch (dt) {
         case AHCI_DEV_SATA:
+          if (sata == NULL) {
+            sata = &abar->ports[i];
+          }
           PRINTK_SERIAL("[%s]: SATA drive found @HBA_PORT_%d\n", MODULE_NAME, i);
           port_init(&abar->ports[i]);
           break;
@@ -171,4 +271,7 @@ void ahci_init(void)  {
 
   abar = (HBA_MEM*)(uint64_t)dev.bar5;
   find_ports();
+
+  uint16_t buf[1000];
+  read_disk_at(sata, 0, 1, (uint16_t*)&buf);
 }
