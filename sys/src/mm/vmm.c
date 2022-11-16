@@ -73,6 +73,33 @@ void vmm_map_page(uintptr_t* pml4, uintptr_t vaddr, uintptr_t phys, uint64_t fla
 #endif
 }
 
+
+void vmm_unmap_page(uintptr_t* pml4, uintptr_t vaddr) {
+  size_t pml4_index = (vaddr & ((size_t)0x1FF << 39)) >> 39;
+  size_t pdpt_index = (vaddr & ((size_t)0x1FF << 30)) >> 30;
+  size_t pd_index = (vaddr & ((size_t)0x1FF << 21)) >> 21;
+  size_t pt_index = (vaddr & ((size_t)0x1FF << 12)) >> 12;
+
+  uintptr_t* pdpt = get_next_level(pml4, pml4_index);
+  uintptr_t* pd = get_next_level(pdpt, pdpt_index);
+  uintptr_t* pt = get_next_level(pd, pd_index);
+  pt[pt_index] = 0;
+  __tlb_flush_single(vaddr);
+}
+
+
+uintptr_t vmm_get_phys(uintptr_t* pml4, uintptr_t vaddr) {
+  size_t pml4_index = (vaddr & ((size_t)0x1FF << 39)) >> 39;
+  size_t pdpt_index = (vaddr & ((size_t)0x1FF << 30)) >> 30;
+  size_t pd_index = (vaddr & ((size_t)0x1FF << 21)) >> 21;
+  size_t pt_index = (vaddr & ((size_t)0x1FF << 12)) >> 12;
+
+  uintptr_t* pdpt = get_next_level(pml4, pml4_index);
+  uintptr_t* pd = get_next_level(pdpt, pdpt_index);
+  uintptr_t* pt = get_next_level(pd, pd_index);
+  return PTE_GET_ADDR(pt[pt_index]);
+}
+
 uintptr_t get_cr3(void) {
   uintptr_t cr3_val = 0;
   ASMV("mov %%cr3, %0" : "=a" (cr3_val));
