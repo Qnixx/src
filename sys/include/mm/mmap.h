@@ -5,7 +5,7 @@
 #include <lib/types.h>
 
 
-uint8_t k_mmap(void* addr, size_t n_pages, uint8_t prot);
+void* k_mmap(void* addr, size_t n_pages, uint8_t prot);
 void k_munmap(void* addr, size_t n_pages);
 
 #endif

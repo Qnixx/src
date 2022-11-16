@@ -30,7 +30,7 @@ static void init_mm(void) {
 
 // TODO: Move this somewhere else.
 static void init_drivers(void) {
-  rtl8139_init();
+  // rtl8139_init();
   init_pit();
   ahci_init();
 }
@@ -54,9 +54,9 @@ _noreturn void _start(void) {
   ioapic_init();
 
   init_drivers();
-  ASMV("sti");
+  // ASMV("sti");
 
-  if_manager_init();
+  // if_manager_init();
   
   // uint8_t payload[4] = { 0x00, 0x05, 0x00, 0x01 };
   // icmp_send_msg(IPv4(192, 168, 1, 152), 8, 0, payload, sizeof(payload));

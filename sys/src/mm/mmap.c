@@ -62,17 +62,17 @@ static void unmap_range(uintptr_t virt, size_t n_pages) {
 }
 
 
-uint8_t k_mmap(void* addr, size_t n_pages, uint8_t prot) {
+void* k_mmap(void* addr, size_t n_pages, uint8_t prot) {
   uint64_t vaddr = addr != NULL ? (uintptr_t)addr : alloc_pages(n_pages);
   uint64_t pte_flags = get_pte_flags(prot);
 
   size_t mapped_pages = 0;
   if ((mapped_pages = map_chunk(vaddr, n_pages, pte_flags)) != 0) {
     unmap_range(vaddr, mapped_pages);
-    return 1;
+    return NULL;
   }
 
-  return 0;
+  return (void*)vaddr;
 }
 
 
