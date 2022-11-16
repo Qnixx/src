@@ -2,6 +2,7 @@
 #include <drivers/serial.h>
 #include <drivers/net/rtl8139.h>
 #include <drivers/timer/pit.h>
+#include <drivers/timer/rtc.h>
 #include <lib/log.h>
 #include <lib/string.h>
 #include <lib/module.h>
@@ -39,6 +40,9 @@ _noreturn void _start(void) {
   serial_init();
   printk(" -- Welcome to Qnixx --\n");
   printk(logo);
+
+   rtc_time_t dt = rtc_read_datetime();
+  printk("Boot timestamp => %d/%d/%d at %d:%d:%d\n", dt.month, dt.day, dt.year, dt.hour, dt.min, dt.sec);
 
   init_mm();
   load_gdt();
