@@ -85,7 +85,6 @@ static uint8_t read_disk_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count,
   }
 
   uint64_t buf_phys = (uint64_t)buf - VMM_HIGHER_HALF;
-
   port->is = (uint32_t)-1;
   
   int32_t spin = 1000000;    // Spin lock counter to prevent getting stuck.
@@ -127,7 +126,7 @@ static uint8_t read_disk_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count,
     --spin;
 
     if (!(spin)) {
-      PRINTK_SERIAL("[%s]: HBA port hung.\n", MODULE_NAME);
+      printk("[%s]: HBA port hung.\n", MODULE_NAME);
       return 1;
     }
   }
@@ -136,7 +135,7 @@ static uint8_t read_disk_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count,
   
   while (1) {
     if (port->is & (1 << 30)) {
-      PRINTK_SERIAL("[%s]: Disk read error!\n", MODULE_NAME);
+      printk("[%s]: Disk read error!\n", MODULE_NAME);
       return 1;
     }
 
@@ -146,7 +145,7 @@ static uint8_t read_disk_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count,
   }
 
   if (port->is & (1 << 30)) {
-      PRINTK_SERIAL("[%s]: Disk read error!\n", MODULE_NAME);
+      printk("[%s]: Disk read error!\n", MODULE_NAME);
       return 1;
   }
 
@@ -238,9 +237,9 @@ static void find_ports(void) {
         case AHCI_DEV_SATA:
           if (sata == NULL) {
             sata = &abar->ports[i];
+            port_init(&abar->ports[i]);
           }
           PRINTK_SERIAL("[%s]: SATA drive found @HBA_PORT_%d\n", MODULE_NAME, i);
-          port_init(&abar->ports[i]);
           break;
         case AHCI_DEV_SEMB:
           PRINTK_SERIAL("[%s]: Enclosure management bridge found @HBA_PORT_%d (ignoring)\n", MODULE_NAME, i);
@@ -271,7 +270,8 @@ void ahci_init(void)  {
 
   abar = (HBA_MEM*)(uint64_t)dev.bar5;
   find_ports();
-
-  uint16_t buf[1000];
-  read_disk_at(sata, 0, 1, (uint16_t*)&buf);
+  
+  uint16_t* buf = kmalloc(1000);
+  read_disk_at(sata, 0, 1, buf);
+  printk("%x->%x->%x\n", buf[0], buf[1], buf[2]);
 }
