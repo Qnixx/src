@@ -17,10 +17,15 @@ MODULE("ahci");
 #define HBA_PORT_IPM_ACTIVE 1
 #define HBA_PORT_DET_PRESENT 3
 
+#define GHC_AHCI_ENABLE (1 << 31)
+#define GHC_HBA_RESET   (1 << 0)
+
 #define HBA_PxCMD_ST    (1 << 0)
 #define HBA_PxCMD_FRE   (1 << 4)
 #define HBA_PxCMD_FR    (1 << 14)
 #define HBA_PxCMD_CR    (1 << 15)
+
+#define HBA_PxIS_TFES   (1 << 30)
 
 #define SATA_SIG_ATA 0x00000101     // SATA drive
 #define SATA_SIG_ATAPI 0xEB140101   // SATAPI drive
@@ -32,7 +37,6 @@ MODULE("ahci");
 #define AHCI_DEV_SEMB 2
 #define AHCI_DEV_PM 3
 #define AHCI_DEV_SATAPI 4
-
 
 static pci_device_t dev;
 static HBA_MEM* abar = NULL;
@@ -76,83 +80,6 @@ static uint32_t check_type(HBA_PORT* p) {
 }
 
 
-static uint8_t read_disk_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
-  if (check_type(port) != AHCI_DEV_SATA)
-    return 1;
-
-  if (AHCI_DEBUG) {
-    PRINTK_SERIAL("[%s] Reading SATA drive.. (LBA=%d, sector_count=%d)\n", MODULE_NAME, lba, sector_count);
-  }
-
-  uint64_t buf_phys = (uint64_t)buf - VMM_HIGHER_HALF;
-  port->is = (uint32_t)-1;
-  
-  int32_t spin = 1000000;    // Spin lock counter to prevent getting stuck.
-  int cmdslot = find_cmdslot(port);
-
-  if (cmdslot == -1) {
-    return 1;
-  }
-
-  uint64_t port_clb = ((uint64_t)port->clbu << 32 | port->clb) + VMM_HIGHER_HALF;
-  HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)port_clb;
-  cmdheader[cmdslot].cfl = sizeof(FIS_REG_H2D)/sizeof(uint32_t);
-  cmdheader[cmdslot].w = 0;
-
-  uint64_t ctba = ((uint64_t)cmdheader[cmdslot].ctbau << 32 | cmdheader[cmdslot].ctba) + VMM_HIGHER_HALF;
-  HBA_CMD_TBL* cmdtable = (HBA_CMD_TBL*)ctba;
-
-
-  cmdtable->prdt_entry[0].dba = buf_phys & 0xFFFFFFFF;
-  cmdtable->prdt_entry[0].dbau = buf_phys >> 32;
-  cmdtable->prdt_entry[0].dbc = 512*sector_count-1;
-  cmdtable->prdt_entry[0].i = 1;
-
-  FIS_REG_H2D* cmdfis = (FIS_REG_H2D*)cmdtable->cfis;
-  cmdfis->fis_type = 0x27;  // Host to device.
-  cmdfis->c = 1;            // Command.
-  cmdfis->command = 0x25;   // Read DMA extended.
-  cmdfis->lba0 = lba & 0xFF;
-  cmdfis->lba1 = (lba >> 8) & 0xFF;
-  cmdfis->lba2 = (lba >> 16) & 0xFF;
-  cmdfis->device = 64;      // LBA mode.
-  cmdfis->lba3 = (lba >> 24) & 0xFF;
-  cmdfis->lba4 = (lba >> 32) & 0xFF;
-  cmdfis->lba5 = (lba >> 40) & 0xFF;
-  cmdfis->countl = (sector_count & 0xFF);
-  cmdfis->counth = (sector_count >> 8) & 0xFF;
-
-  while (port->tfd & (1 << 7) && port->tfd & (1 << 3)) {
-    --spin;
-
-    if (!(spin)) {
-      printk("[%s]: HBA port hung.\n", MODULE_NAME);
-      return 1;
-    }
-  }
-
-  port->ci = 1 << cmdslot;      // Issue command.
-  
-  while (1) {
-    if (port->is & (1 << 30)) {
-      printk("[%s]: Disk read error!\n", MODULE_NAME);
-      return 1;
-    }
-
-    if (!(port->ci & (1 << cmdslot))) {
-      break;
-    }
-  }
-
-  if (port->is & (1 << 30)) {
-      printk("[%s]: Disk read error!\n", MODULE_NAME);
-      return 1;
-  }
-
-  return 0;
-}
-
-
 static void stop_cmd(HBA_PORT* port) {
   // Clear ST to remove the ability
   // of the HBA processing commands.
@@ -182,45 +109,100 @@ static void start_cmd(HBA_PORT* port) {
 }
 
 
+static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
+  int cmdslot = find_cmdslot(port);
+
+  if (cmdslot == -1) {
+    printk(PRINTK_RED "[%s]: No commandslots free!\n", MODULE_NAME);
+    return;
+  }
+  
+  HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)VMM_VIRT((uintptr_t)port->clbu << 32 | port->clb);
+  
+  // Set cmd fis length and write bit.
+  cmdheader[cmdslot].cfl = sizeof(FIS_REG_H2D)/sizeof(uint32_t);
+  cmdheader[cmdslot].w = 0;
+  
+  // Get the command table.
+  HBA_CMD_TBL* cmdtbl = (HBA_CMD_TBL*)VMM_VIRT((uintptr_t)cmdheader[cmdslot].ctbau << 32 | cmdheader[cmdslot].ctba);
+  kmemzero(cmdtbl, sizeof(HBA_CMD_TBL) + (cmdheader[cmdslot].prdtl-1)*sizeof(HBA_PRDT_ENTRY));
+
+  // Set data base low/high.
+  cmdtbl->prdt_entry[0].dba = VMM_PHYS(buf) & 0xFFFFFFFF;
+  cmdtbl->prdt_entry[0].dbau = VMM_PHYS(buf) >> 32;
+
+  // Set how many bytes we want to read.
+  cmdtbl->prdt_entry[0].dbc = 512*sector_count-1;
+  cmdtbl->prdt_entry[0].i = 0;
+
+  // Setup FIS.
+  FIS_REG_H2D* cmdfis = (FIS_REG_H2D*)(&cmdtbl->cfis);
+  cmdfis->fis_type = 0x27;      // Host to device.
+  cmdfis->c = 1;
+  cmdfis->command = 0x25;       // Read DMA extended.
+  
+  // Setup FIS LBA stuff.
+  cmdfis->lba0 = lba & 0xFF;
+  cmdfis->lba1 = (lba >> 8) & 0xFF;
+  cmdfis->lba2 = (lba >> 16) & 0xFF;
+  cmdfis->device = 64;      // LBA mode.
+  cmdfis->lba3 = (lba >> 24) & 0xFF;
+  cmdfis->lba4 = (lba >> 32) & 0xFF;
+  cmdfis->lba5 = (lba >> 40) & 0xFF;
+  
+  // Setup sector count stuff.
+  cmdfis->countl = sector_count & 0xFF;
+  cmdfis->counth = sector_count >> 8;
+
+  // Wait while BSY(bit 7) and DRQ(bit 3) aren't set.
+  while (port->tfd & ((1 << 7) | (1 << 3)));
+  
+  // Issue the command.
+  port->ci = 1 << cmdslot;
+
+  while (1) {
+    if (port->is & HBA_PxIS_TFES) {
+      PRINTK_SERIAL(PRINTK_RED "[%s]: Disk read failed.\n", MODULE_NAME);
+      return;
+    }
+
+    if (!(port->ci & (1 << cmdslot))) {
+      break;
+    }
+  }
+
+  if (port->is & HBA_PxIS_TFES) {
+      PRINTK_SERIAL(PRINTK_RED "[%s]: Disk read failed.\n", MODULE_NAME);
+      return;
+  }
+}
+
+
 static void port_init(HBA_PORT* port) {
   // Stop the command engine.
   stop_cmd(port);
-  
-  // Setup the command list base.
-  void* cmdlist_base = kmalloc(0x1000 + 0x3E8);
-  kmemzero(cmdlist_base, 0x1000 + 0x3E8);
 
-  uint64_t cmdlist_phys_base = (uint64_t)cmdlist_base - VMM_HIGHER_HALF;
-  cmdlist_phys_base = ALIGN_UP(cmdlist_phys_base, 0x3E8);
+  uintptr_t cmdlist_buf = ALIGN_UP((uintptr_t)kmalloc(0x800), 0x400);
+  uintptr_t fis_buffer = ALIGN_UP((uintptr_t)kmalloc(0x200), 0x100);
 
-  port->clb = cmdlist_phys_base & 0xFFFFFFFF;
-  port->clbu = cmdlist_phys_base >> 32;
+  port->clb = VMM_PHYS(cmdlist_buf) & 0xFFFFFFFF;
+  port->clbu = VMM_PHYS(cmdlist_buf) >> 32;
 
-  // Set FB and FBU.
-  void* fb_virt = kmalloc(0x1000 + 0x100);
-  kmemzero(fb_virt, 0x1000 + 0x100);
-  
-  uint64_t fb_phys = (uint64_t)fb_virt - VMM_HIGHER_HALF;
-  fb_phys = ALIGN_UP(fb_phys, 0x100);
+  port->fb = VMM_PHYS(fis_buffer) & 0xFFFFFFFF;
+  port->fbu = VMM_PHYS(fis_buffer) >> 32;
 
-  port->fb = fb_phys & 0xFFFFFFFF;
-  port->fbu = fb_phys >> 32;
+  // Assign a command header to CLB vaddr.
+  HBA_CMD_HEADER* cmdheader = (void*)cmdlist_buf;
 
-  // Setup the command header.
-  HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)cmdlist_base;
+  for (uint8_t i = 0; i < 32; ++i) {
+    uintptr_t buf = ALIGN_UP((uintptr_t)kmalloc(512), 128);
+    kmemzero((void*)buf, 512);
 
-  for (int i = 0; i < 32; ++i) {
-    cmdheader[i].prdtl = 8;         // 8 prdtl entries per command table.
-                                    // 256-bytes per command table.
-    
-    void* ctba = kmalloc(0x2050);
-    kmemzero(ctba, 256*32);
-
-    uint64_t phys = (uint64_t)ctba - VMM_HIGHER_HALF;
-    cmdheader[i].ctba = phys & 0xFFFFFFFF;
-    cmdheader[i].ctbau = phys >> 32;
+    cmdheader[i].ctba = VMM_PHYS(buf) & 0xFFFFFFFF;
+    cmdheader[i].ctbau = VMM_PHYS(buf) >> 32;
+    cmdheader[i].prdtl = 8;
   }
-
+  
   // Start the command engine.
   start_cmd(port);
 }
@@ -239,13 +221,13 @@ static void find_ports(void) {
             sata = &abar->ports[i];
             port_init(&abar->ports[i]);
           }
-          PRINTK_SERIAL("[%s]: SATA drive found @HBA_PORT_%d\n", MODULE_NAME, i);
+          printk("[%s]: SATA drive found @HBA_PORT_%d\n", MODULE_NAME, i);
           break;
         case AHCI_DEV_SEMB:
           PRINTK_SERIAL("[%s]: Enclosure management bridge found @HBA_PORT_%d (ignoring)\n", MODULE_NAME, i);
           break;
         case AHCI_DEV_SATAPI:
-          PRINTK_SERIAL("[%s]: SATAPI drive found @HBA_PORT_%d (ignoring)\n", MODULE_NAME, i);
+          printk("[%s]: SATAPI drive found @HBA_PORT_%d (ignoring)\n", MODULE_NAME, i);
           break;
         case AHCI_DEV_PM:
           PRINTK_SERIAL("[%s]: Port multiplier found @HBA_PORT_%d (ignoring)\n", MODULE_NAME, i);
@@ -264,14 +246,15 @@ void ahci_init(void)  {
     return;
   }
 
-  PRINTK_SERIAL("[%s]: SATA controller found on PCI bus %d, slot %d\n", MODULE_NAME, dev.bus, dev.slot);
+  printk("[%s]: SATA controller found on PCI bus %d, slot %d\n", MODULE_NAME, dev.bus, dev.slot);
   enable_bus_mastering(dev);
-  PRINTK_SERIAL("[%s]: Bus mastering enabled for SATA controller.\n", MODULE_NAME);
+  printk("[%s]: Bus mastering enabled for SATA controller.\n", MODULE_NAME);
 
   abar = (HBA_MEM*)(uint64_t)dev.bar5;
   find_ports();
   
+  printk("[%s]: HBA is in %s mode\n", MODULE_NAME, abar->ghc & GHC_AHCI_ENABLE ? "AHCI" : "IDE emulation");
+  
   uint16_t* buf = kmalloc(1000);
-  read_disk_at(sata, 0, 1, buf);
-  printk("%x->%x->%x\n", buf[0], buf[1], buf[2]);
+  sata_read_at(sata, 0, 1, buf);
 }

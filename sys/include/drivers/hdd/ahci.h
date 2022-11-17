@@ -105,7 +105,7 @@ typedef struct FIS_REG_H2D {
   uint8_t icc;
   uint8_t control;
 
-  uint8_t rsv1[1];                // Reserved.
+  uint8_t rsv1[4];                // Reserved.
 } FIS_REG_H2D;
 
 
