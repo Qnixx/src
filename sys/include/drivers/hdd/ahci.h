@@ -109,6 +109,15 @@ typedef struct FIS_REG_H2D {
 } FIS_REG_H2D;
 
 
+typedef struct {
+  size_t id;
+  uintptr_t clb_virtual;
+  uintptr_t ctba_virtual[32];
+  uintptr_t fb_virtual;
+  HBA_PORT* port;
+} sata_dev_t;
+
+
 void ahci_init(void);
 
 

@@ -4,6 +4,7 @@
 #include <lib/log.h>
 #include <lib/string.h>
 #include <lib/math.h>
+#include <lib/assert.h>
 #include <mm/heap.h>
 #include <mm/vmm.h>
 
@@ -44,7 +45,7 @@ MODULE("ahci");
 
 static pci_device_t dev;
 static HBA_MEM* abar = NULL;
-static HBA_PORT* sata = NULL;
+sata_dev_t used_sata_dev;
 
 
 static int find_cmdslot(HBA_PORT* p) {
@@ -122,7 +123,7 @@ static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, ui
     return;
   }
   
-  HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)VMM_VIRT((uintptr_t)port->clbu << 32 | port->clb);
+  HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)used_sata_dev.clb_virtual;
   
   // Set cmd fis length and write bit.
   cmdheader[cmdslot].cfl = sizeof(FIS_REG_H2D)/sizeof(uint32_t);
@@ -131,12 +132,15 @@ static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, ui
   cmdheader[cmdslot].p = 1;
   
   // Get the command table.
-  HBA_CMD_TBL* cmdtbl = (HBA_CMD_TBL*)VMM_VIRT((uintptr_t)cmdheader[cmdslot].ctbau << 32 | cmdheader[cmdslot].ctba);
+  HBA_CMD_TBL* cmdtbl = (HBA_CMD_TBL*)used_sata_dev.ctba_virtual[cmdslot];
   kmemzero(cmdtbl, sizeof(HBA_CMD_TBL) + (cmdheader[cmdslot].prdtl-1)*sizeof(HBA_PRDT_ENTRY));
 
   // Set data base low/high.
-  cmdtbl->prdt_entry[0].dba = VMM_PHYS(buf) & 0xFFFFFFFF;
-  cmdtbl->prdt_entry[0].dbau = VMM_PHYS(buf) >> 32;
+  cmdtbl->prdt_entry[0].dba = VMM_PHYS(PAGE_ALIGN_DOWN(buf)) & 0xFFFFFFFF;
+  cmdtbl->prdt_entry[0].dbau = VMM_PHYS(PAGE_ALIGN_DOWN(buf)) >> 32;
+
+
+  ASSERT(cmdtbl->prdt_entry[0].dba != 0, "Fetching physical address failed.\n");
 
   // Set how many bytes we want to read.
   cmdtbl->prdt_entry[0].dbc = 512*sector_count-1;
@@ -193,23 +197,30 @@ static void port_init(HBA_PORT* port) {
 
   uintptr_t cmdlist_buf = ALIGN_UP((uintptr_t)kmalloc(0x800), 0x400);
   uintptr_t fis_buffer = ALIGN_UP((uintptr_t)kmalloc(0x200), 0x100);
+  used_sata_dev.fb_virtual = fis_buffer;
+  used_sata_dev.clb_virtual = cmdlist_buf;
 
-  port->clb = VMM_PHYS(cmdlist_buf) & 0xFFFFFFFF;
-  port->clbu = VMM_PHYS(cmdlist_buf) >> 32;
+  port->clb = VMM_PHYS(PAGE_ALIGN_DOWN(cmdlist_buf)) & 0xFFFFFFFF;
+  port->clbu = VMM_PHYS(PAGE_ALIGN_DOWN(cmdlist_buf)) >> 32;
 
-  port->fb = VMM_PHYS(fis_buffer) & 0xFFFFFFFF;
-  port->fbu = VMM_PHYS(fis_buffer) >> 32;
+  ASSERT(port->clb != 0, "Fetching physical address failed.\n");
+
+  port->fb = VMM_PHYS(PAGE_ALIGN_DOWN(fis_buffer)) & 0xFFFFFFFF;
+  port->fbu = VMM_PHYS(PAGE_ALIGN_DOWN(fis_buffer)) >> 32;
+
+  ASSERT(port->fb != 0, "Fetching physical address failed.\n");
 
   // Assign a command header to CLB vaddr.
   HBA_CMD_HEADER* cmdheader = (void*)cmdlist_buf;
 
   for (uint8_t i = 0; i < 32; ++i) {
     uintptr_t buf = ALIGN_UP((uintptr_t)kmalloc(512), 128);
-    kmemzero((void*)buf, 512);
-
-    cmdheader[i].ctba = VMM_PHYS(buf) & 0xFFFFFFFF;
-    cmdheader[i].ctbau = VMM_PHYS(buf) >> 32;
+    kmemzero((void*)buf, 512); 
+    used_sata_dev.ctba_virtual[i] = buf;
+    cmdheader[i].ctba = VMM_PHYS(PAGE_ALIGN_DOWN(buf)) & 0xFFFFFFFF;
+    cmdheader[i].ctbau = VMM_PHYS(PAGE_ALIGN_DOWN(buf)) >> 32;
     cmdheader[i].prdtl = 8;
+    ASSERT(cmdheader[i].ctba != 0, "Fetching physical address failed.\n");
   }
   
   // Start the command engine.
@@ -218,6 +229,7 @@ static void port_init(HBA_PORT* port) {
 
 
 static void find_ports(void) {
+  static uint8_t sata_dev_init = 0;
   uint32_t pi = abar->pi;
 
   for (uint8_t i = 0; i < 32; ++i, pi >>= 1) {
@@ -226,9 +238,10 @@ static void find_ports(void) {
 
       switch (dt) {
         case AHCI_DEV_SATA:
-          if (sata == NULL) {
-            sata = &abar->ports[i];
+          if (!(sata_dev_init)) {
+            used_sata_dev.port = &abar->ports[i];
             port_init(&abar->ports[i]);
+            sata_dev_init = 1;
           }
           printk("[%s]: SATA drive found @HBA_PORT_%d\n", MODULE_NAME, i);
           break;
@@ -263,9 +276,8 @@ void ahci_init(void)  {
   find_ports();
   
   printk("[%s]: HBA is in %s mode\n", MODULE_NAME, abar->ghc & GHC_AHCI_ENABLE ? "AHCI" : "IDE emulation");
-
+  
   uint16_t* buf = kmalloc(1000);
-  buf[0] = 0xFFFF;
-  sata_read_at(sata, 0, 1, buf);
-  printk("%x\n", buf[0]);
+  sata_read_at(used_sata_dev.port, 1, 1, buf);
+  printk("WOOOO!: %x\n", buf[0]);
 }
