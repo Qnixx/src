@@ -117,8 +117,6 @@ static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, ui
   int cmdslot = find_cmdslot(port);
   port->is = 0xFFFF;
 
-  printk("%d\n", __LINE__);
-
   if (cmdslot == -1) {
     printk(PRINTK_RED "[%s]: No commandslots free!\n", MODULE_NAME);
     return;
@@ -163,10 +161,8 @@ static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, ui
   cmdfis->countl = sector_count & 0xFF;
   cmdfis->counth = sector_count >> 8;
 
-  printk("%d\n", __LINE__);
   // Wait while BSY(bit 7) and DRQ(bit 3) aren't set.
   while (port->tfd & ((1 << 7) | (1 << 3)));
-  printk("%d\n", __LINE__);
   
   // Issue the command.
   port->ci = 1 << cmdslot;
@@ -183,8 +179,6 @@ static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, ui
       break;
     }
   }
-
-  printk("%d\n", __LINE__);
 
   if (port->is & HBA_PxIS_TFES) {
       PRINTK_SERIAL(PRINTK_RED "[%s]: Disk read failed.\n", MODULE_NAME);
