@@ -31,6 +31,7 @@ MODULE("ahci");
 #define HBA_PxIS_IFS       (1 << 27)
 #define HBA_PxIS_HBDS      (1 << 28)
 #define HBA_PxIS_INFS      (1 << 26)
+#define HBA_ALL_ERRORS (HBA_PxIS_TFES | HBA_PxIS_HBFS | HBA_PxIS_HBDS | HBA_PxIS_IFS | HBA_PxIS_INFS)
 
 #define SATA_SIG_ATA 0x00000101     // SATA drive
 #define SATA_SIG_ATAPI 0xEB140101   // SATAPI drive
@@ -147,7 +148,7 @@ static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, ui
   cmdtbl->prdt_entry[0].i = 0;
 
   // Setup FIS.
-  FIS_REG_H2D* cmdfis = (FIS_REG_H2D*)(&cmdtbl->cfis);
+  FIS_REG_H2D* cmdfis = (FIS_REG_H2D*)(cmdtbl->cfis);
   cmdfis->fis_type = 0x27;      // Host to device.
   cmdfis->c = 1;
   cmdfis->command = 0x25;       // Read DMA extended.
@@ -174,7 +175,7 @@ static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, ui
   while (1) {
     uint64_t is = port->is;
     // NOTE: Infinite loop on hardware is here.
-    if (is & (HBA_PxIS_TFES | HBA_PxIS_HBFS | HBA_PxIS_HBDS | HBA_PxIS_IFS | HBA_PxIS_INFS)) {
+    if (is & HBA_ALL_ERRORS) {
       printk(PRINTK_RED "[%s]: Disk read failed (error; port->is: %x)\n", MODULE_NAME, is);
       return;
     }
@@ -184,10 +185,10 @@ static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, ui
     }
   }
 
-  if (port->is & HBA_PxIS_TFES) {
-      PRINTK_SERIAL(PRINTK_RED "[%s]: Disk read failed.\n", MODULE_NAME);
-      return;
-  }
+  if (port->is & HBA_ALL_ERRORS) {
+    printk(PRINTK_RED "[%s]: Disk read failed (error; port->is: %x)\n", MODULE_NAME);
+    return;
+  } 
 }
 
 
@@ -277,7 +278,7 @@ void ahci_init(void)  {
   
   printk("[%s]: HBA is in %s mode\n", MODULE_NAME, abar->ghc & GHC_AHCI_ENABLE ? "AHCI" : "IDE emulation");
   
-  uint16_t* buf = kmalloc(1000);
+  uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
   sata_read_at(used_sata_dev.port, 1, 1, buf);
-  printk("WOOOO!: %x\n", buf[0]);
+  printk("%x\n", buf[0]);
 }
