@@ -69,6 +69,24 @@ static inline uint32_t get_bar4(uint8_t bus, uint8_t slot, uint8_t func) {
   return ((uint32_t)hi << 16 | lo);
 }
 
+static inline uint32_t get_bar5(uint8_t bus, uint8_t slot, uint8_t func) {
+  uint16_t lo = pci_config_read(bus, slot, func, 0x24);
+  uint16_t hi = pci_config_read(bus, slot, func, 0x26);
+  return ((uint32_t)hi << 16 | lo);
+}
+
+
+static inline void init_dev(pci_device_t* dev, uint8_t bus, uint8_t slot, uint8_t func) {
+  dev->irq_line = read_irq_line(bus, slot, func);
+  dev->valid = 1;
+  dev->bar0 = get_bar0(bus, slot, func);
+  dev->bar4 = get_bar4(bus, slot, func);
+  dev->bar5 = get_bar5(bus, slot, func);
+  dev->bus = bus;
+  dev->slot = slot;
+  dev->func = func;
+}
+
 
 pci_device_t pci_find_any(uint8_t class_code, uint8_t subclass_code, int8_t interface_value) { 
   pci_device_t dev;
@@ -78,13 +96,8 @@ pci_device_t pci_find_any(uint8_t class_code, uint8_t subclass_code, int8_t inte
         if (read_class(bus, slot, func) == class_code && read_subclass(bus, slot, func) == subclass_code) {
           if (interface_value != -1 && read_prog_if(bus, slot, func) != interface_value)
             continue;
-
-          dev.irq_line = read_irq_line(bus, slot, func);
-          dev.valid = 1;
-          dev.bar0 = get_bar0(bus, slot, func);
-          dev.bus = bus;
-          dev.slot = slot;
-          dev.func = func;
+          
+          init_dev(&dev, bus, slot, func);
           return dev;
         }
       }
@@ -103,12 +116,7 @@ pci_device_t pci_find(unsigned int vendor_id, unsigned int device_id) {
     for (uint8_t slot = 0; slot < 32; ++slot) {
       for (uint8_t func = 0; func < 8; ++func) {
         if (read_devid(bus, slot, func) == device_id && read_vendor(bus, slot, func) == vendor_id) {
-          dev.irq_line = read_irq_line(bus, slot, func);
-          dev.valid = 1;
-          dev.bar0 = get_bar0(bus, slot, func);
-          dev.bus = bus;
-          dev.slot = slot;
-          dev.func = func;
+          init_dev(&dev, bus, slot, func);
           return dev;
         }
       }

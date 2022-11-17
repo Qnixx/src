@@ -4,6 +4,7 @@
 #include <stdarg.h>
 
 #define PRINTK_PANIC "\\1kpanic: "
+#define PRINTK_RED "\\1"
 
 
 void printk(const char* fmt, ...);

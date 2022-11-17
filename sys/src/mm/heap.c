@@ -1,5 +1,5 @@
-#include <mm/vmm.h>
 #include <mm/heap.h>
+#include <mm/mmap.h>
 #include <lib/module.h>
 #include <lib/log.h>
 #include <lib/string.h>
@@ -7,10 +7,11 @@
 MODULE("heap");
 
 #define HEAP_DEBUG 0
+#define HEAP_PAGES 80
+#define MAX_HEAP_SIZE 0x1000*HEAP_PAGES
 
 static heapblk_t* heap_head = NULL;
 static heapblk_t* heap_tail = NULL;
-static size_t total_size = 0;
 static size_t bytes_allocated = 0;
 
 static heapblk_t* first_fit(size_t size) {
@@ -23,20 +24,13 @@ static heapblk_t* first_fit(size_t size) {
 
 void* kmalloc(size_t size) {
   if (size == 0) {
-    printk("[%s:%s()]: size == 0\n", MODULE_NAME, __func__);
+    printk(PRINTK_RED "[%s:%s()]: size == 0\n", MODULE_NAME, __func__);
     return NULL;
   }
 
-  if (bytes_allocated + size > total_size) {
-    if(vmm_alloc_page() == NULL) {
-      printk(PRINTK_PANIC "Failed to allocate a new heap page\n");
-      return NULL;
-    }
-	  total_size += 0x1000;
-
-#if HEAP_DEBUG
-    PRINTK_SERIAL("[%s]: Allocated new heap page.\n", MODULE_NAME);
-#endif
+  if (bytes_allocated + size >= MAX_HEAP_SIZE-1) {
+    printk(PRINTK_RED "[%s:%s()]: Heap full (memory allocated: %d bytes\n", MODULE_NAME, __func__, bytes_allocated);
+    return NULL;
   }
 
   heapblk_t* region = first_fit(size);
@@ -52,9 +46,10 @@ void* kmalloc(size_t size) {
   }
 
   bytes_allocated += size;
-#if HEAP_DEBUG
-  PRINTK_SERIAL("[%s]: Allocated %d bytes, now %dKiB used.\n", MODULE_NAME, region->size, bytes_allocated / 1024);
-#endif
+
+  if (HEAP_DEBUG) {
+    PRINTK_SERIAL("[%s]: Allocated %d bytes, now %dKiB used.\n", MODULE_NAME, region->size, bytes_allocated / 1024);
+  }
   
   return DATA_START(region);
 }
@@ -68,9 +63,10 @@ void kfree(void* ptr) {
 
   heap_tail = region;
   bytes_allocated -= region->size;
-#if HEAP_DEBUG
-  PRINTK_SERIAL("[%s]: Freed %d bytes, now %dKiB used.\n", MODULE_NAME, region->size, bytes_allocated / 1024);
-#endif
+
+  if (HEAP_DEBUG) {
+    PRINTK_SERIAL("[%s]: Freed %d bytes, now %dKiB used.\n", MODULE_NAME, region->size, bytes_allocated / 1024);
+  }
 }
 
 
@@ -83,8 +79,7 @@ void* krealloc(void* oldptr, size_t new_size) {
 }
 
 void heap_init(void) {
-  total_size = 0x1000;
-  heap_head = (heapblk_t*)vmm_alloc_page();
+  heap_head = k_mmap(NULL, HEAP_PAGES, PROT_READ | PROT_WRITE | PROT_EXEC);
   heap_head->size = 0;
   heap_head->next = NULL;
   heap_head->type = HEAPBLK_USED;
