@@ -3,6 +3,7 @@
 #include <lib/assert.h>
 #include <lib/module.h>
 #include <lib/asm.h>
+#include <lib/math.h>
 
 #define VMM_DEBUG 0
 
@@ -122,5 +123,5 @@ void* vmm_alloc_page(void) {
   uintptr_t ptr = pmm_alloc();
   if(ptr == 0) return 0;
 
-  return (void*)(ptr + VMM_HIGHER_HALF);
+  return (void*)ALIGN_DOWN((ptr + VMM_HIGHER_HALF), PAGE_SIZE);
 }
