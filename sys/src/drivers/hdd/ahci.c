@@ -26,6 +26,10 @@ MODULE("ahci");
 #define HBA_PxCMD_CR    (1 << 15)
 
 #define HBA_PxIS_TFES   (1 << 30)
+#define HBA_PxIS_HBFS      (1 << 29)
+#define HBA_PxIS_IFS       (1 << 27)
+#define HBA_PxIS_HBDS      (1 << 28)
+#define HBA_PxIS_INFS      (1 << 26)
 
 #define SATA_SIG_ATA 0x00000101     // SATA drive
 #define SATA_SIG_ATAPI 0xEB140101   // SATAPI drive
@@ -111,6 +115,9 @@ static void start_cmd(HBA_PORT* port) {
 
 static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
   int cmdslot = find_cmdslot(port);
+  port->is = 0xFFFF;
+
+  printk("%d\n", __LINE__);
 
   if (cmdslot == -1) {
     printk(PRINTK_RED "[%s]: No commandslots free!\n", MODULE_NAME);
@@ -122,6 +129,8 @@ static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, ui
   // Set cmd fis length and write bit.
   cmdheader[cmdslot].cfl = sizeof(FIS_REG_H2D)/sizeof(uint32_t);
   cmdheader[cmdslot].w = 0;
+  cmdheader[cmdslot].c = 1;
+  cmdheader[cmdslot].p = 1;
   
   // Get the command table.
   HBA_CMD_TBL* cmdtbl = (HBA_CMD_TBL*)VMM_VIRT((uintptr_t)cmdheader[cmdslot].ctbau << 32 | cmdheader[cmdslot].ctba);
@@ -154,15 +163,19 @@ static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, ui
   cmdfis->countl = sector_count & 0xFF;
   cmdfis->counth = sector_count >> 8;
 
+  printk("%d\n", __LINE__);
   // Wait while BSY(bit 7) and DRQ(bit 3) aren't set.
   while (port->tfd & ((1 << 7) | (1 << 3)));
+  printk("%d\n", __LINE__);
   
   // Issue the command.
   port->ci = 1 << cmdslot;
 
   while (1) {
-    if (port->is & HBA_PxIS_TFES) {
-      PRINTK_SERIAL(PRINTK_RED "[%s]: Disk read failed.\n", MODULE_NAME);
+    uint64_t is = port->is;
+    // NOTE: Infinite loop on hardware is here.
+    if (is & (HBA_PxIS_TFES | HBA_PxIS_HBFS | HBA_PxIS_HBDS | HBA_PxIS_IFS | HBA_PxIS_INFS)) {
+      printk(PRINTK_RED "[%s]: Disk read failed (error; port->is: %x)\n", MODULE_NAME, is);
       return;
     }
 
@@ -170,6 +183,8 @@ static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, ui
       break;
     }
   }
+
+  printk("%d\n", __LINE__);
 
   if (port->is & HBA_PxIS_TFES) {
       PRINTK_SERIAL(PRINTK_RED "[%s]: Disk read failed.\n", MODULE_NAME);
@@ -254,7 +269,9 @@ void ahci_init(void)  {
   find_ports();
   
   printk("[%s]: HBA is in %s mode\n", MODULE_NAME, abar->ghc & GHC_AHCI_ENABLE ? "AHCI" : "IDE emulation");
-  
+
   uint16_t* buf = kmalloc(1000);
+  buf[0] = 0xFFFF;
   sata_read_at(sata, 0, 1, buf);
+  printk("%x\n", buf[0]);
 }
