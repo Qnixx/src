@@ -26,7 +26,7 @@ MODULE("ahci");
 #define HBA_PxCMD_FR    (1 << 14)
 #define HBA_PxCMD_CR    (1 << 15)
 
-#define HBA_PxIS_TFES   (1 << 30)
+#define HBA_PxIS_TFES      (1 << 30)
 #define HBA_PxIS_HBFS      (1 << 29)
 #define HBA_PxIS_IFS       (1 << 27)
 #define HBA_PxIS_HBDS      (1 << 28)
@@ -113,7 +113,6 @@ static void start_cmd(HBA_PORT* port) {
   port->cmd |= HBA_PxCMD_FRE;
   port->cmd |= HBA_PxCMD_ST;
 }
-
 
 static void sata_read_at(HBA_PORT* port, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
   int cmdslot = find_cmdslot(port);
@@ -280,5 +279,4 @@ void ahci_init(void)  {
   
   uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
   sata_read_at(used_sata_dev.port, 1, 1, buf);
-  printk("%x\n", buf[0]);
 }

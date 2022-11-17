@@ -93,7 +93,7 @@ typedef struct FIS_REG_H2D {
   uint8_t lba0;
   uint8_t lba1;
   uint8_t lba2;
-  uint8_t device;
+  uint8_t device;               // Device register.
 
   uint8_t lba3;
   uint8_t lba4;
@@ -103,7 +103,7 @@ typedef struct FIS_REG_H2D {
   uint8_t countl;
   uint8_t counth;
   uint8_t icc;
-  uint8_t control;
+  uint8_t control;                // Control register.
 
   uint8_t rsv1[4];                // Reserved.
 } FIS_REG_H2D;
