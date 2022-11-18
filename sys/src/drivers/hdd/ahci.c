@@ -238,11 +238,10 @@ static void device_init(sata_dev_t* device) {
 
   char serial_number[21];
   kmemzero(serial_number, 20);
-  uint8_t* buf8 = (uint8_t*)buf;
-  kmemcpy(serial_number, buf8+20, 20);
+  kmemcpy(serial_number, (uint8_t*)(buf)+20, 20);
     
   for (uint16_t i = 0; i < 20; i += 2) {
-    uint8_t tmp = serial_number[i];
+    uint8_t tmp = serial_number[i + 1];
     serial_number[i] = serial_number[i + 1];
     serial_number[i + 1] = tmp;
   }
