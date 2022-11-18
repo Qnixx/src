@@ -145,6 +145,8 @@ static void sata_read_at(sata_dev_t* device, uint64_t lba, uint32_t sector_count
 
   send_cmd(device, cmdslot);  
 }
+*/
+
 
 static void sata_write_at(sata_dev_t* device, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
   int cmdslot = find_cmdslot(device);
@@ -154,19 +156,21 @@ static void sata_write_at(sata_dev_t* device, uint64_t lba, uint32_t sector_coun
     return;
   }
 
-  volatile HBA_CMD_HEADER* cmdheader = (volatile HBA_CMD_HEADER*)(device->cmdlist_phys + VMM_HIGHER_HALF);
-
+  volatile HBA_CMD_HEADER* cmdheader = (volatile HBA_CMD_HEADER*)(device->cmdlist_virt);
   cmdheader[cmdslot].cfl = sizeof(FIS_REG_H2D)/sizeof(uint32_t);
   cmdheader[cmdslot].w = 1;
-  cmdheader[cmdslot].prdtl = 1;
+  cmdheader[cmdslot].p = 0;
+  cmdheader[cmdslot].prdtl = 8;
 
-  volatile HBA_CMD_TBL* cmd_table = set_prdt(device, VMM_PHYS((uintptr_t)PAGE_ALIGN_UP(buf)), 0, sector_count*512-1);
-  volatile FIS_REG_H2D* fis = (FIS_REG_H2D*)cmd_table->cfis;
+  volatile HBA_CMD_TBL* cmd_table = set_prdt(device, VMM_PHYS(buf), 0, sector_count*512, cmdslot);
+  volatile FIS_REG_H2D* fis = (volatile FIS_REG_H2D*)cmd_table->cfis;
+  kmemzero((void*)fis, sizeof(FIS_REG_H2D));
   
-  fis->fis_type = 0x27;        // Host to device.
-  fis->c = 1;
   fis->command = 0x35;         // Write DMA extended.
+  fis->fis_type = 0x27;        // Host to device.
+  fis->flags = (1 << 7);
   fis->device = 1 << 6;        // LBA mode.
+
   fis->lba0 = (uint8_t)(lba & 0xFF);
   fis->lba0 = (uint8_t)((lba >> 8) & 0xFF);
   fis->lba0 = (uint8_t)((lba >> 16) & 0xFF);
@@ -179,8 +183,6 @@ static void sata_write_at(sata_dev_t* device, uint64_t lba, uint32_t sector_coun
   send_cmd(device, cmdslot);
   
 }
-
-*/
 
 
 static void device_init(sata_dev_t* device) {
@@ -196,6 +198,8 @@ static void device_init(sata_dev_t* device) {
 
   uint64_t cmdlist_buf = PAGE_ALIGN_UP(kmalloc(0x2000));
   uint64_t fb = PAGE_ALIGN_UP(kmalloc(0x1000));
+
+  device->cmdlist_virt = cmdlist_buf;
 
   uint64_t fb_phys = VMM_PHYS(fb);
 
@@ -216,43 +220,6 @@ static void device_init(sata_dev_t* device) {
 
   while (device->port->cmd & (1 << 15) != 0);
   device->port->cmd |= (1 << 0 | 1 << 8);
-
-  cmdheader[cmdslot].cfl = sizeof(FIS_REG_H2D)/sizeof(uint32_t);
-  cmdheader[cmdslot].w = 0;
-  cmdheader[cmdslot].p = 0;
-  cmdheader[cmdslot].prdtl = 8;
-
-  uint64_t identity = pmm_alloc();
-
-  device->port->is = (uint32_t)-1;
-  volatile HBA_CMD_TBL* cmdtbl = set_prdt(device, identity, 0, 511, cmdslot);
-  volatile FIS_REG_H2D* fis = (volatile FIS_REG_H2D*)(cmdtbl->cfis);
-  kmemzero((void*)fis, sizeof(FIS_REG_H2D));
-
-  uint16_t* buf = (uint16_t*)(identity + VMM_HIGHER_HALF);
-
-  fis->command = 0xEC;
-  fis->fis_type = 0x27;
-  fis->flags = (1 << 7);
-  send_cmd(device, cmdslot);
-
-  char serial_number[21];
-  kmemzero(serial_number, 20);
-  kmemcpy(serial_number, (uint8_t*)(buf)+20, 20);
-    
-  for (uint16_t i = 0; i < 20; i += 2) {
-    uint8_t tmp = serial_number[i + 1];
-    serial_number[i] = serial_number[i + 1];
-    serial_number[i + 1] = tmp;
-  }
-
-  printk("SATA drive serial number below:\n");
-
-  for (uint8_t i = 0; i < 20; ++i) {
-    printk("%X", serial_number[i]);
-  }
-
-  printk("\n");
 }
 
 
@@ -339,5 +306,7 @@ void ahci_init(void)  {
     return;
   }
   
-  // uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
+  uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
+  kmemset(buf, 0xEE, 1000);
+  sata_write_at(&devices[0], 0, 1, buf);
 }

@@ -121,7 +121,7 @@ typedef struct FIS_REG_H2D {
 
 typedef struct {
   HBA_PORT* port;
-  uint64_t cmdlist_phys;    // Allocated with pmm_alloc().
+  uint64_t cmdlist_virt;
   uint64_t ctba_virts[32];
   uint64_t fis_base;        // FIS base.
   uint32_t magic;           // 0xCA7511
