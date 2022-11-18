@@ -50,6 +50,7 @@ MODULE("ahci");
 static pci_device_t dev;
 static HBA_MEM* abar = NULL;
 static uint32_t n_slots = 0;
+static size_t drive_count = 0;
 static sata_dev_t* devices = NULL;
 
 
@@ -103,15 +104,15 @@ static void send_cmd(sata_dev_t* device, uint32_t slot) {
   device->port->cmd &= ~(HBA_PxCMD_FRE);
 }
 
-static inline volatile HBA_CMD_TBL* set_prdt(sata_dev_t* device, uint64_t buf_phys, uint8_t interrupt, uint32_t byte_count) {
-  volatile HBA_CMD_TBL* cmdtable = (volatile HBA_CMD_TBL*)(device->ctba_phys + VMM_HIGHER_HALF);
+static inline volatile HBA_CMD_TBL* set_prdt(sata_dev_t* device, uint64_t buf_phys, uint8_t interrupt, uint32_t byte_count, uint64_t cmdslot) {
+  volatile HBA_CMD_TBL* cmdtable = (volatile HBA_CMD_TBL*)(device->ctba_virts[cmdslot]);
   cmdtable->prdt_entry[0].dba = (uint32_t)buf_phys;
   cmdtable->prdt_entry[0].dbau = buf_phys >> 32;
-  cmdtable->prdt_entry[0].dbc = byte_count;
-  cmdtable->prdt_entry[0].i = interrupt;
+  cmdtable->prdt_entry[0].dbc = byte_count | ((interrupt & 1) << 31);
   return cmdtable;
 }
 
+/*
 static void sata_read_at(sata_dev_t* device, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
   int cmdslot = find_cmdslot(device);
   
@@ -142,29 +143,117 @@ static void sata_read_at(sata_dev_t* device, uint64_t lba, uint32_t sector_count
   fis->countl = sector_count & 0xFF;
   fis->counth = (sector_count >> 8) & 0xFF;
 
+  send_cmd(device, cmdslot);  
+}
+
+static void sata_write_at(sata_dev_t* device, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
+  int cmdslot = find_cmdslot(device);
+  
+  if (cmdslot == -1) {
+    PRINTK_SERIAL(PRINTK_RED "[%s]: Could not find a command slot!\n", MODULE_NAME);
+    return;
+  }
+
+  volatile HBA_CMD_HEADER* cmdheader = (volatile HBA_CMD_HEADER*)(device->cmdlist_phys + VMM_HIGHER_HALF);
+
+  cmdheader[cmdslot].cfl = sizeof(FIS_REG_H2D)/sizeof(uint32_t);
+  cmdheader[cmdslot].w = 1;
+  cmdheader[cmdslot].prdtl = 1;
+
+  volatile HBA_CMD_TBL* cmd_table = set_prdt(device, VMM_PHYS((uintptr_t)PAGE_ALIGN_UP(buf)), 0, sector_count*512-1);
+  volatile FIS_REG_H2D* fis = (FIS_REG_H2D*)cmd_table->cfis;
+  
+  fis->fis_type = 0x27;        // Host to device.
+  fis->c = 1;
+  fis->command = 0x35;         // Write DMA extended.
+  fis->device = 1 << 6;        // LBA mode.
+  fis->lba0 = (uint8_t)(lba & 0xFF);
+  fis->lba0 = (uint8_t)((lba >> 8) & 0xFF);
+  fis->lba0 = (uint8_t)((lba >> 16) & 0xFF);
+  fis->lba0 = (uint8_t)((lba >> 24) & 0xFF);
+  fis->lba0 = (uint8_t)((lba >> 32) & 0xFF);
+  fis->lba0 = (uint8_t)((lba >> 40) & 0xFF);
+  fis->countl = sector_count & 0xFF;
+  fis->counth = (sector_count >> 8) & 0xFF;
+
   send_cmd(device, cmdslot);
   
 }
 
+*/
+
 
 static void device_init(sata_dev_t* device) {
-  ASSERT(device->magic == SATA_DEV_MAGIC, "Device magic invalid!\n");
-  device->cmdlist_phys = pmm_alloc();
+  int cmdslot = find_cmdslot(device);
 
-  HBA_CMD_HEADER* cmdlist_header = (HBA_CMD_HEADER*)(device->cmdlist_phys + VMM_HIGHER_HALF);
-
-  for (uint8_t i = 0; i < 32; ++i) {
-    uint64_t desc_base = pmm_alloc();
-    device->ctba_phys = desc_base;
-    cmdlist_header[i].ctba = (uint32_t)desc_base;
-    cmdlist_header[i].ctbau = desc_base >> 32;
-    cmdlist_header[i].prdtl = 1;
+  if (cmdslot == -1) {
+    PRINTK_SERIAL("[%s]: Cannot find free cmdslot right now..\n", MODULE_NAME);
+    return;
   }
 
-  device->fis_base = pmm_alloc();
+  device->port->cmd &= ~(1 << 0 | 1 << 8);
+  while (device->port->cmd & (1 << 14) != 0 && device->port->cmd & (1 << 15) != 0);
 
-  // Set ST and FRE bits.
-  device->port->cmd |= (1 << 0) | (1 << 4);
+  uint64_t cmdlist_buf = PAGE_ALIGN_UP(kmalloc(0x2000));
+  uint64_t fb = PAGE_ALIGN_UP(kmalloc(0x1000));
+
+  uint64_t fb_phys = VMM_PHYS(fb);
+
+  device->port->clb = (uint32_t)VMM_PHYS(cmdlist_buf);
+  device->port->clbu = VMM_PHYS(cmdlist_buf) >> 32;
+
+  device->port->fb = (uint32_t)ALIGN_DOWN(fb_phys, 256);
+  device->port->fbu = (uint64_t)(ALIGN_DOWN(fb_phys, 256)) >> 32;
+
+  volatile HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)cmdlist_buf;
+  
+  for (uint8_t i = 0; i < 32; ++i) {
+    device->ctba_virts[i] = PAGE_ALIGN_UP(kmalloc(0x1000));
+    cmdheader[i].ctba = (uint32_t)VMM_PHYS(device->ctba_virts[i]);
+    cmdheader[i].ctbau = VMM_PHYS(devices->ctba_virts[i]) >> 32;
+    cmdheader[i].prdtl = 8;
+  }
+
+  while (device->port->cmd & (1 << 15) != 0);
+  device->port->cmd |= (1 << 0 | 1 << 8);
+
+  cmdheader[cmdslot].cfl = sizeof(FIS_REG_H2D)/sizeof(uint32_t);
+  cmdheader[cmdslot].w = 0;
+  cmdheader[cmdslot].p = 0;
+  cmdheader[cmdslot].prdtl = 8;
+
+  uint64_t identity = pmm_alloc();
+
+  device->port->is = (uint32_t)-1;
+  volatile HBA_CMD_TBL* cmdtbl = set_prdt(device, identity, 0, 511, cmdslot);
+  volatile FIS_REG_H2D* fis = (volatile FIS_REG_H2D*)(cmdtbl->cfis);
+  kmemzero((void*)fis, sizeof(FIS_REG_H2D));
+
+  uint16_t* buf = (uint16_t*)(identity + VMM_HIGHER_HALF);
+
+  fis->command = 0xEC;
+  fis->fis_type = 0x27;
+  fis->flags = (1 << 7);
+  send_cmd(device, cmdslot);
+
+  char serial_number[21];
+  kmemzero(serial_number, 20);
+  uint8_t* buf8 = (uint8_t*)buf;
+  kmemcpy(serial_number, buf8+20, 20);
+    
+  for (uint16_t i = 0; i < 20; i += 2) {
+    uint8_t tmp = serial_number[i];
+    serial_number[i] = serial_number[i + 1];
+    serial_number[i + 1] = tmp;
+  }
+
+  printk("SATA drive serial number below:\n");
+
+  for (uint8_t i = 0; i < 20; ++i) {
+    printk("%X", serial_number[i]);
+  }
+
+  printk("\n");
 }
 
 
@@ -172,8 +261,6 @@ static void find_ports(void) {
   if (devices != NULL) {
     return;
   }
-
-  size_t dev_idx = 0;
 
   uint32_t port_count = abar->cap & 0x1F;
   devices = kmalloc(sizeof(sata_dev_t) * port_count);
@@ -186,11 +273,11 @@ static void find_ports(void) {
       
       switch (check_type(port)) {
         case AHCI_DEV_SATA:
-          devices[dev_idx].port = port;
-          devices[dev_idx].magic = SATA_DEV_MAGIC;
+          devices[drive_count].port = port;
+          devices[drive_count].magic = SATA_DEV_MAGIC;
           PRINTK_SERIAL("[%s]: SATA drive found @HBA_PORT_%d\n", MODULE_NAME, i);
-          device_init(&devices[dev_idx]);
-          ++dev_idx;
+          device_init(&devices[drive_count]);
+          ++drive_count;
           break;
       }
     }
@@ -239,15 +326,19 @@ void ahci_init(void)  {
 
   abar = (HBA_MEM*)(uint64_t)dev.bar5;
   
-  printk("[%s]: HBA is in %s mode\n", MODULE_NAME, abar->ghc & GHC_AHCI_ENABLE ? "AHCI" : "IDE emulation");
   take_ownership();
 
   abar->ghc |= (1 << 31);
   abar->ghc &= ~(1 << 1);
 
+  printk("[%s]: HBA is in %s mode\n", MODULE_NAME, abar->ghc & GHC_AHCI_ENABLE ? "AHCI" : "IDE emulation");
+
   find_ports();
+
+  if (drive_count == 0) {
+    printk("[%s]: !!No drives attached!!\n", MODULE_NAME);
+    return;
+  }
   
-  uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
-  sata_read_at(&devices[0], 0, 1, (void*)buf);
-  printk("BUFFER_DATA: %x\n", buf[0]);
+  // uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
 }

@@ -7,6 +7,8 @@
 #define SATA_DEV_MAGIC 0xCA7511
 
 
+
+
 typedef volatile struct HBA_PORT {
   uint32_t clb;       // Command list base address (1K-byte aligned).
   uint32_t clbu;      // Command list base address (upper 32 bits).
@@ -25,6 +27,7 @@ typedef volatile struct HBA_PORT {
   uint32_t ci;        // Command issue.
   uint32_t sntf;      // SATA notification.
   uint32_t fbs;       // FIS based switch control.
+  uint32_t devslp;
   uint32_t rsv1[11];  // Reserved.
   uint32_t vendor[4]; // Vendor specfic.
 } _packed HBA_PORT;
@@ -66,14 +69,20 @@ typedef struct HBA_CMD_HEADER {
   uint32_t rsv1[4];         // Reserved.
 } _packed HBA_CMD_HEADER;
 
+typedef volatile struct HBA_CMD {
+  uint16_t flags;
+  uint16_t prdtl;
+  uint32_t prdbc;
+  uint32_t ctba;
+  uint32_t cbau;
+  uint32_t reserved[4];
+} _packed HBA_CMD;
+
 typedef struct HBA_PRDT_ENTRY {
   uint32_t dba;     // Data base address (low).
   uint32_t dbau;    // Data base address (high).
-  uint32_t rsv0;    // Reserved.
-  
+  uint32_t rsv0;    // Reserved. 
   uint32_t dbc : 22;
-  uint32_t rsv1 : 9;
-  uint32_t i : 1;
 } _packed HBA_PRDT_ENTRY;
 
 
@@ -87,9 +96,7 @@ typedef struct HBA_CMD_TBL {
 
 typedef struct FIS_REG_H2D {
   uint8_t fis_type;             // FIS_TYPE_REG_H2D.
-  uint8_t pmport : 4;           // Port multiplier.
-  uint8_t rsv0 : 3;             // Reserved.
-  uint8_t c : 1;                // 1: Command, 0: Control.
+  uint8_t flags;
   uint8_t command;              // Command register.
   uint8_t featurel;             // Feature register (low).
   
@@ -107,15 +114,15 @@ typedef struct FIS_REG_H2D {
   uint8_t counth;
   uint8_t icc;
   uint8_t control;                // Control register.
-
-  uint8_t rsv1[4];                // Reserved.
+  
+  uint32_t reserved;
 } _packed FIS_REG_H2D;
 
 
 typedef struct {
   HBA_PORT* port;
   uint64_t cmdlist_phys;    // Allocated with pmm_alloc().
-  uint64_t ctba_phys;
+  uint64_t ctba_virts[32];
   uint64_t fis_base;        // FIS base.
   uint32_t magic;           // 0xCA7511
 } sata_dev_t;
