@@ -87,7 +87,7 @@ run:
 	@sudo ip address add $(LOCAL_IP) dev tap0
 	@sudo ip link set dev tap0 up
 	@ echo "Creating disk image.."
-	# @ qemu-img create sbin/diskimg.img 1M
+	@ qemu-img create sbin/diskimg.img 1M
 	@echo "Running..."
 	@qemu-system-x86_64 --enable-kvm -cpu qemu64 -M q35 -m 3G -cdrom Qnixx.iso -boot d -smp 4 -rtc base=localtime -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0 -serial stdio -netdev tap,id=br0,ifname=tap0,script=no,downscript=no -device rtl8139,netdev=br0,mac=52:55:00:d1:55:01 -drive id=disk,file=sbin/diskimg.img,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0,serial=111111111111111111111 --trace "ahci_cmd_done"
 	@echo "Removing tap..."
