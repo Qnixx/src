@@ -292,13 +292,18 @@ void ahci_init(void)  {
 
   abar = (HBA_MEM*)(uint64_t)dev.bar5;
   
+  // Take control over the HBA.
   take_ownership();
-
+  
+  // Enable AHCI.
   abar->ghc |= (1 << 31);
+
+  // Clear interrupt enabled bit.
   abar->ghc &= ~(1 << 1);
 
   printk("[%s]: HBA is in %s mode\n", MODULE_NAME, abar->ghc & GHC_AHCI_ENABLE ? "AHCI" : "IDE emulation");
 
+  // Locate ports on the HBA.
   find_ports();
 
   if (drive_count == 0) {
