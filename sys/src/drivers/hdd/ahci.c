@@ -10,6 +10,7 @@
 #include <mm/heap.h>
 #include <mm/vmm.h>
 #include <mm/pmm.h>
+#include <dev/dev.h>
 
 #define AHCI_DEBUG 1
 
@@ -47,11 +48,26 @@ MODULE("ahci");
 #define AHCI_DEV_PM 3
 #define AHCI_DEV_SATAPI 4
 
+#define IFACE_2_SATA_DEV(iface) (((sata_dev_t*)iface))
+
+
+static pci_dev_descriptor_t pci_dev = {
+  .device_class = DEV_BLOCK,
+  .device_type = DEV_BLOCK_SATA
+};
+
+static dev_driver_t sata_generic = {
+  .name = "SATA",
+  .connection = DEV_CONNECTION_PCI,
+  .iface_count = 0,
+  .connection_data = &pci_dev,
+  .next = NULL
+};
+
 static pci_device_t dev;
 static HBA_MEM* abar = NULL;
 static uint32_t n_slots = 0;
 static size_t drive_count = 0;
-static sata_dev_t* devices = NULL;
 
 
 static int find_cmdslot(sata_dev_t* device) {
@@ -214,7 +230,7 @@ static void device_init(sata_dev_t* device) {
   for (uint8_t i = 0; i < 32; ++i) {
     device->ctba_virts[i] = PAGE_ALIGN_UP(kmalloc(0x1000));
     cmdheader[i].ctba = (uint32_t)VMM_PHYS(device->ctba_virts[i]);
-    cmdheader[i].ctbau = VMM_PHYS(devices->ctba_virts[i]) >> 32;
+    cmdheader[i].ctbau = VMM_PHYS(device->ctba_virts[i]) >> 32;
     cmdheader[i].prdtl = 8;
   }
 
@@ -224,14 +240,17 @@ static void device_init(sata_dev_t* device) {
 
 
 static void find_ports(void) {
-  if (devices != NULL) {
+  if (sata_generic.ifaces != NULL) {
     return;
   }
 
   uint32_t port_count = abar->cap & 0x1F;
-  devices = kmalloc(sizeof(sata_dev_t) * port_count);
   n_slots = (abar->cap >> 8) & 0x1F;
+  sata_generic.ifaces = kmalloc(sizeof(sata_dev_t) * port_count);
+  sata_generic.iface_count = port_count;
+
   PRINTK_SERIAL("[%s]: HBA has %d ports and %d command slots.\n", MODULE_NAME, port_count, n_slots);
+  sata_dev_t* devices = (sata_dev_t*)sata_generic.ifaces;
 
   for (uint32_t i = 0; i < port_count; ++i) {
     if (abar->pi & (1 << i) != 0) {
@@ -287,9 +306,16 @@ void ahci_init(void)  {
   }
 
   printk("[%s]: SATA controller found on PCI bus %d, slot %d\n", MODULE_NAME, dev.bus, dev.slot);
+
+  // Put some PCI information in the pci_dev struct.
+  pci_dev.vendor_id = pci_read_vendorid(dev);
+  pci_dev.device_id = pci_read_deviceid(dev);
+  
+  // Enable bus mastering.
   enable_bus_mastering(dev);
   printk("[%s]: Bus mastering enabled for SATA controller.\n", MODULE_NAME);
 
+  // Get ABAR.
   abar = (HBA_MEM*)(uint64_t)dev.bar5;
   
   // Take control over the HBA.
@@ -306,12 +332,15 @@ void ahci_init(void)  {
   // Locate ports on the HBA.
   find_ports();
 
+  // Init driver.
+  driver_init(&sata_generic);
+
   if (drive_count == 0) {
     printk("[%s]: !!No drives attached!!\n", MODULE_NAME);
     return;
   }
   
   uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
-  kmemset(buf, 0xEE, 1000);
-  sata_write_at(&devices[0], 0, 1, buf);
+  kmemset(buf, 0xFF, 1000);
+  sata_write_at(IFACE_2_SATA_DEV(sata_generic.ifaces), 0, 1, buf);
 }
