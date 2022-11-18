@@ -103,6 +103,81 @@ static void send_cmd(sata_dev_t* device, uint32_t slot) {
   device->port->cmd &= ~(HBA_PxCMD_FRE);
 }
 
+static void sata_read_at(sata_dev_t* device, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
+  int cmdslot = find_cmdslot(device);
+  device->port->is = (uint32_t)-1;
+
+  if (cmdslot == -1) {
+    printk(PRINTK_RED "[%s]: No commandslots free!\n", MODULE_NAME);
+    return;
+  }
+  
+  HBA_CMD_HEADER* cmdheader = (HBA_CMD_HEADER*)(device->cmdlist_phys + VMM_HIGHER_HALF);
+  
+  // Set cmd fis length and write bit.
+  cmdheader[cmdslot].cfl = sizeof(FIS_REG_H2D)/sizeof(uint32_t);
+  cmdheader[cmdslot].w = 0;
+  cmdheader[cmdslot].c = 1;
+  cmdheader[cmdslot].p = 0;
+  
+  // Get the command table.
+  HBA_CMD_TBL* cmdtbl = (HBA_CMD_TBL*)(device->ctba_phys + VMM_HIGHER_HALF);
+  kmemzero(cmdtbl, sizeof(HBA_CMD_TBL) + (cmdheader[cmdslot].prdtl-1)*sizeof(HBA_PRDT_ENTRY));
+
+  // Set data base low/high.
+  printk("%x\n", (uintptr_t)buf % 4096);
+  cmdtbl->prdt_entry[0].dba = (uint32_t)VMM_PHYS(buf);
+  cmdtbl->prdt_entry[0].dbau = VMM_PHYS(buf) >> 32;
+
+  ASSERT(cmdtbl->prdt_entry[0].dba != 0, "Fetching physical address failed.\n");
+
+  // Set how many bytes we want to read.
+  cmdtbl->prdt_entry[0].dbc = 512*sector_count-1;
+  cmdtbl->prdt_entry[0].i = 0;
+
+  // Setup FIS.
+  FIS_REG_H2D* cmdfis = (FIS_REG_H2D*)(&cmdtbl->cfis);
+  cmdfis->fis_type = 0x27;      // Host to device.
+  cmdfis->c = 1;
+  cmdfis->command = 0x25;       // Read DMA extended.
+  
+  // Setup FIS LBA stuff.
+  cmdfis->lba0 = lba & 0xFF;
+  cmdfis->lba1 = (lba >> 8) & 0xFF;
+  cmdfis->lba2 = (lba >> 16) & 0xFF;
+  cmdfis->device = 64;      // LBA mode.
+  cmdfis->lba3 = (lba >> 24) & 0xFF;
+  cmdfis->lba4 = (lba >> 32) & 0xFF;
+  cmdfis->lba5 = (lba >> 40) & 0xFF;
+  
+  // Setup sector count stuff.
+  cmdfis->countl = sector_count & 0xFF;
+  cmdfis->counth = sector_count >> 8;
+
+  // Wait while BSY(bit 7) and DRQ(bit 3) aren't set.
+  while (device->port->tfd & ((1 << 7) | (1 << 3)));
+
+  send_cmd(device, cmdslot);
+
+  while (1) {
+    uint64_t is = device->port->is;
+    // NOTE: Infinite loop on hardware is here.
+    if (is & (HBA_PxIS_TFES | HBA_PxIS_HBFS | HBA_PxIS_HBDS | HBA_PxIS_IFS | HBA_PxIS_INFS)) {
+      printk(PRINTK_RED "[%s]: Disk read failed (error; device->port->is: %x)\n", MODULE_NAME, is);
+      return;
+    }
+
+    if (!(device->port->ci & (1 << cmdslot))) {
+      break;
+    }
+  }
+
+  if (device->port->is & HBA_PxIS_TFES) {
+      PRINTK_SERIAL(PRINTK_RED "[%s]: Disk read failed.\n", MODULE_NAME);
+      return;
+  }
+}
+
 
 static void device_init(sata_dev_t* device) {
   ASSERT(device->magic == SATA_DEV_MAGIC, "Device magic invalid!\n");
@@ -112,7 +187,7 @@ static void device_init(sata_dev_t* device) {
 
   for (uint8_t i = 0; i < 32; ++i) {
     uint64_t desc_base = pmm_alloc();
-
+    device->ctba_phys = desc_base;
     cmdlist_header[i].ctba = (uint32_t)desc_base;
     cmdlist_header[i].ctbau = desc_base >> 32;
     cmdlist_header[i].prdtl = 1;
@@ -203,9 +278,9 @@ void ahci_init(void)  {
   abar->ghc &= ~(1 << 1);
 
   find_ports();
-  send_cmd(&devices[0], find_cmdslot(&devices[0]));
+  // send_cmd(&devices[0], find_cmdslot(&devices[0]));
   
-  // uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
-  // sata_read_at(used_sata_dev.port, 1, 1, buf);
-  // printk("%x\n", buf[0]);
+  uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
+  sata_read_at(&devices[0], 0, 500, (void*)buf);
+  printk("%x\n", buf[0]);
 }
