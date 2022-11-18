@@ -278,9 +278,8 @@ void ahci_init(void)  {
   abar->ghc &= ~(1 << 1);
 
   find_ports();
-  // send_cmd(&devices[0], find_cmdslot(&devices[0]));
   
   uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
-  sata_read_at(&devices[0], 0, 500, (void*)buf);
+  sata_read_at(&devices[0], 0, 1, (void*)buf);
   printk("%x\n", buf[0]);
 }
