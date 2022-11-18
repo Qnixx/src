@@ -10,6 +10,7 @@
 #include <mm/heap.h>
 #include <lib/string.h>
 #include <lib/math.h>
+#include <dev/dev.h>
 
 MODULE("rtl8139");
 
@@ -22,6 +23,23 @@ MODULE("rtl8139");
  *  RealTek 8139 Driver.
  *
  */
+
+
+static pci_dev_descriptor_t pci_dev = {
+  .vendor_id = VENDOR_ID,
+  .device_id = DEVICE_ID,
+  .device_class = DEV_NET,
+  .device_type = DEV_NET_ETHERNET
+};
+
+static dev_driver_t rtl8139_generic = {
+  .name = "RTL8139",
+  .ifaces = NULL,
+  .iface_count = 0,
+  .connection = DEV_CONNECTION_PCI,
+  .connection_data = &pci_dev,
+  .next = NULL
+};
 
 
 static uint32_t iobase = 0;
@@ -180,6 +198,7 @@ void rtl8139_init(void) {
   }
 
   printk("[%s]: RTL8139 card is attached on PCI bus %d, slot %d\n", MODULE_NAME, dev.bus, dev.slot);
+  driver_init(&rtl8139_generic);
 
   uint16_t interface_id = create_interface("eth");
   printk("[%s]: Created new interface @eth%d\n", MODULE_NAME, interface_id);

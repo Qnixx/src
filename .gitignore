@@ -6,3 +6,4 @@ buildcc/
 cross/
 TauLang
 dump.dat
+*.img

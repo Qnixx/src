@@ -54,7 +54,6 @@ _noreturn void _start(void) {
   lapic_init();
 
   ioapic_init();
-
   init_drivers();
   ASMV("sti");
 

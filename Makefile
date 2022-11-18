@@ -72,6 +72,10 @@ TauLang:
 	@git clone https://github.com/Ian-Marco-Moffett/TauLang
 	@cd TauLang; make; make install_linux
 
+sbin/diskimg.img:
+	@echo "Creating disk image.."
+	@qemu-img create sbin/diskimg.img 1M
+
 .PHONY:
 romfs:
 	mkdir -p meta/system/raw/
@@ -82,13 +86,13 @@ debug_kvm:
 	qemu-system-x86_64 --enable-kvm -cpu qemu64 -M q35 -m 3G -drive file=Qnixx.iso,format=raw -boot d -monitor stdio -smp 4 -rtc base=localtime -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0 -device rtl8139
 
 .PHONY:
-run:
+run: sbin/diskimg.img
 	@echo "Creating tap..."
 	@sudo ip tuntap add dev tap0 mode tap user $(shell id -u)
 	@sudo ip address add $(LOCAL_IP) dev tap0
 	@sudo ip link set dev tap0 up
 	@echo "Running..."
-	@qemu-system-x86_64 --enable-kvm -cpu qemu64 -M q35 -m 3G -drive file=Qnixx.iso,format=raw -boot d -smp 4 -rtc base=localtime -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0 -serial stdio -netdev tap,id=br0,ifname=tap0,script=no,downscript=no -device rtl8139,netdev=br0,mac=52:55:00:d1:55:01
+	@qemu-system-x86_64 --enable-kvm -cpu qemu64 -M q35 -m 3G -cdrom Qnixx.iso -boot d -smp 4 -rtc base=localtime -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0 -serial stdio -netdev tap,id=br0,ifname=tap0,script=no,downscript=no -device rtl8139,netdev=br0,mac=52:55:00:d1:55:01 -drive id=disk,file=sbin/diskimg.img,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0,serial=111111111111111111111 --trace "ahci_cmd_done"
 	@echo "Removing tap..."
 	@sudo ip tuntap del dev tap0 mode tap
 
