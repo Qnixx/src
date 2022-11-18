@@ -87,6 +87,14 @@ static inline void init_dev(pci_device_t* dev, uint8_t bus, uint8_t slot, uint8_
   dev->func = func;
 }
 
+unsigned int pci_read_vendorid(pci_device_t dev) {
+  return read_vendor(dev.bus, dev.slot, dev.func);
+}
+
+unsigned int pci_read_deviceid(pci_device_t dev) {
+  return read_devid(dev.bus, dev.slot, dev.func);
+}
+
 
 pci_device_t pci_find_any(uint8_t class_code, uint8_t subclass_code, int8_t interface_value) { 
   pci_device_t dev;
