@@ -14,7 +14,10 @@
 #define DEV_BLOCK 0x1
   #define DEV_BLOCK_SATA 0x1
 
-#define DEV_CONNECTION_PCI 0x2
+#define DEV_NET 0x2
+  #define DEV_NET_ETHERNET 0x1
+
+#define DEV_CONNECTION_PCI 0x1
 
 typedef uint16_t connection_t;
 typedef uint16_t connection_ver_t;
@@ -27,7 +30,7 @@ typedef struct {
   uint32_t vendor_id;
   uint32_t device_id;
   
-  /* Information about device */
+  /* Information about the device */
   dev_class_t device_class;
   dev_type_t device_type; 
 } pci_dev_descriptor_t;

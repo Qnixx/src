@@ -341,6 +341,6 @@ void ahci_init(void)  {
   }
   
   uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
-  kmemset(buf, 0xFF, 1000);
+  kmemset(buf, 0xE9, 1000);
   sata_write_at(IFACE_2_SATA_DEV(sata_generic.ifaces), 0, 1, buf);
 }

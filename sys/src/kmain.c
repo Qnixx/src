@@ -30,7 +30,7 @@ static void init_mm(void) {
 
 // TODO: Move this somewhere else.
 static void init_drivers(void) {
-  // rtl8139_init();
+  rtl8139_init();
   init_pit();
   ahci_init();
 }
