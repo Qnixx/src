@@ -41,7 +41,7 @@ typedef struct DevDriver {
   const char* name;
   
   /* Driver interaction */
-  uint64_t(*ioctl)(uint64_t req, ...);
+  uint64_t(*ioctl)(uint64_t cmd, ...);
   void* ifaces;       // Usually allocated with kmalloc().
   size_t iface_count;
 
@@ -55,6 +55,8 @@ typedef struct DevDriver {
 
 
 void driver_init(void* driver_descriptor);
+
+// dev_type can be zero to search only for the dev_class.
 dev_driver_t* find_driver(dev_class_t dev_class, dev_type_t dev_type);
 
 #endif
