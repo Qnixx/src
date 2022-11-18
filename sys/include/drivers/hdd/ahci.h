@@ -2,6 +2,7 @@
 #define AHCI_H_
 
 #include <lib/types.h>
+#include <lib/asm.h>
 
 #define SATA_DEV_MAGIC 0xCA7511
 
@@ -26,7 +27,7 @@ typedef volatile struct HBA_PORT {
   uint32_t fbs;       // FIS based switch control.
   uint32_t rsv1[11];  // Reserved.
   uint32_t vendor[4]; // Vendor specfic.
-} HBA_PORT;
+} _packed HBA_PORT;
 
 typedef volatile struct HBA_MEM {
   uint32_t cap;         // Host capability.
@@ -44,7 +45,7 @@ typedef volatile struct HBA_MEM {
   uint8_t reserved[0xA0-0x2C];
   uint8_t vendor[0x100-0xA0];
   HBA_PORT ports[1];    // 1 ~ 32.
-} HBA_MEM;
+} _packed HBA_MEM;
 
 
 typedef struct HBA_CMD_HEADER {
@@ -63,7 +64,7 @@ typedef struct HBA_CMD_HEADER {
   uint32_t ctba;            // Command table descriptor base address.
   uint32_t ctbau;           // Command table descriptor base address upper 32 bits.
   uint32_t rsv1[4];         // Reserved.
-} HBA_CMD_HEADER;
+} _packed HBA_CMD_HEADER;
 
 typedef struct HBA_PRDT_ENTRY {
   uint32_t dba;     // Data base address (low).
@@ -73,7 +74,7 @@ typedef struct HBA_PRDT_ENTRY {
   uint32_t dbc : 22;
   uint32_t rsv1 : 9;
   uint32_t i : 1;
-} HBA_PRDT_ENTRY;
+} _packed HBA_PRDT_ENTRY;
 
 
 typedef struct HBA_CMD_TBL {
@@ -81,7 +82,7 @@ typedef struct HBA_CMD_TBL {
   uint8_t acmd[16];
   uint8_t rsv[48];
   HBA_PRDT_ENTRY prdt_entry[1];
-} HBA_CMD_TBL;
+} _packed HBA_CMD_TBL;
 
 
 typedef struct FIS_REG_H2D {
@@ -108,7 +109,7 @@ typedef struct FIS_REG_H2D {
   uint8_t control;                // Control register.
 
   uint8_t rsv1[4];                // Reserved.
-} FIS_REG_H2D;
+} _packed FIS_REG_H2D;
 
 
 typedef struct {
