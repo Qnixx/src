@@ -15,7 +15,7 @@ dev_driver_t* find_driver(dev_class_t dev_class, dev_type_t dev_type) {
           pci_dev_descriptor_t* dev = current->connection_data;
           if (dev_type > 0) {
             // Find with both class and type.
-            if (dev->device_class == dev_class || dev->device_type == dev_type)
+            if (dev->device_class == dev_class && dev->device_type == dev_type)
               return current;
           } else {
             // Find with only class.
@@ -25,6 +25,8 @@ dev_driver_t* find_driver(dev_class_t dev_class, dev_type_t dev_type) {
         }
         break;
     }
+
+    current = current->next;
   }
 
   return NULL;
