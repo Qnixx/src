@@ -3,6 +3,8 @@
 
 #include <lib/types.h>
 
+#define SATA_DEV_MAGIC 0xCA7511
+
 
 typedef volatile struct HBA_PORT {
   uint32_t clb;       // Command list base address (1K-byte aligned).
@@ -110,11 +112,10 @@ typedef struct FIS_REG_H2D {
 
 
 typedef struct {
-  size_t id;
-  uintptr_t clb_virtual;
-  uintptr_t ctba_virtual[32];
-  uintptr_t fb_virtual;
   HBA_PORT* port;
+  uint64_t cmdlist_phys;    // Allocated with pmm_alloc().
+  uint64_t fis_base;        // FIS base.
+  uint32_t magic;           // 0xCA7511
 } sata_dev_t;
 
 
