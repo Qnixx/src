@@ -249,5 +249,5 @@ void ahci_init(void)  {
   
   uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
   sata_read_at(&devices[0], 0, 1, (void*)buf);
-  printk("%x\n", buf[0]);
+  printk("BUFFER_DATA: %x\n", buf[0]);
 }
