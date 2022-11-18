@@ -25,6 +25,7 @@ void vmm_unmap_page(uintptr_t* pml4, uintptr_t vaddr);
 uintptr_t vmm_get_phys(uintptr_t* pml4, uintptr_t vaddr);
 uintptr_t get_cr3(void);
 void* vmm_alloc_page(void);
+void vmm_free_page(void* page);
 uintptr_t mkpml4(void);
 
 #endif

@@ -48,8 +48,6 @@ MODULE("ahci");
 #define AHCI_DEV_PM 3
 #define AHCI_DEV_SATAPI 4
 
-#define IFACE_2_SATA_DEV(iface) (((sata_dev_t*)iface))
-
 
 static pci_dev_descriptor_t pci_dev = {
   .device_class = DEV_BLOCK,
@@ -128,8 +126,9 @@ static inline volatile HBA_CMD_TBL* set_prdt(sata_dev_t* device, uint64_t buf_ph
   return cmdtable;
 }
 
-/*
-static void sata_read_at(sata_dev_t* device, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
+void sata_read_drive(sata_dev_t* device, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
+  ASSERT((uint64_t)buf % 4096 == 0, "Buffer not 4K aligned!\n");
+
   int cmdslot = find_cmdslot(device);
   
   if (cmdslot == -1) {
@@ -137,19 +136,21 @@ static void sata_read_at(sata_dev_t* device, uint64_t lba, uint32_t sector_count
     return;
   }
 
-  volatile HBA_CMD_HEADER* cmdheader = (volatile HBA_CMD_HEADER*)(device->cmdlist_phys + VMM_HIGHER_HALF);
-
+  volatile HBA_CMD_HEADER* cmdheader = (volatile HBA_CMD_HEADER*)(device->cmdlist_virt);
   cmdheader[cmdslot].cfl = sizeof(FIS_REG_H2D)/sizeof(uint32_t);
   cmdheader[cmdslot].w = 0;
-  cmdheader[cmdslot].prdtl = 1;
+  cmdheader[cmdslot].p = 0;
+  cmdheader[cmdslot].prdtl = 8;
 
-  volatile HBA_CMD_TBL* cmd_table = set_prdt(device, VMM_PHYS((uintptr_t)PAGE_ALIGN_UP(buf)), 0, sector_count*512-1);
-  volatile FIS_REG_H2D* fis = (FIS_REG_H2D*)cmd_table->cfis;
+  volatile HBA_CMD_TBL* cmd_table = set_prdt(device, VMM_PHYS(buf), 0, sector_count*512, cmdslot);
+  volatile FIS_REG_H2D* fis = (volatile FIS_REG_H2D*)cmd_table->cfis;
+  kmemzero((void*)fis, sizeof(FIS_REG_H2D));
   
-  fis->fis_type = 0x27;        // Host to device.
-  fis->c = 1;
   fis->command = 0x25;         // Read DMA extended.
+  fis->fis_type = 0x27;        // Host to device.
+  fis->flags = (1 << 7);
   fis->device = 1 << 6;        // LBA mode.
+
   fis->lba0 = (uint8_t)(lba & 0xFF);
   fis->lba0 = (uint8_t)((lba >> 8) & 0xFF);
   fis->lba0 = (uint8_t)((lba >> 16) & 0xFF);
@@ -159,12 +160,12 @@ static void sata_read_at(sata_dev_t* device, uint64_t lba, uint32_t sector_count
   fis->countl = sector_count & 0xFF;
   fis->counth = (sector_count >> 8) & 0xFF;
 
-  send_cmd(device, cmdslot);  
+  send_cmd(device, cmdslot);
+  
 }
-*/
 
-
-static void sata_write_at(sata_dev_t* device, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
+void sata_write_drive(sata_dev_t* device, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
+  ASSERT((uint64_t)buf % 4096 == 0, "Buffer not 4K aligned!\n");
   int cmdslot = find_cmdslot(device);
   
   if (cmdslot == -1) {
@@ -196,8 +197,7 @@ static void sata_write_at(sata_dev_t* device, uint64_t lba, uint32_t sector_coun
   fis->countl = sector_count & 0xFF;
   fis->counth = (sector_count >> 8) & 0xFF;
 
-  send_cmd(device, cmdslot);
-  
+  send_cmd(device, cmdslot);  
 }
 
 
@@ -338,9 +338,5 @@ void ahci_init(void)  {
   if (drive_count == 0) {
     printk("[%s]: !!No drives attached!!\n", MODULE_NAME);
     return;
-  }
-  
-  uint16_t* buf = (uint16_t*)(ALIGN_UP((uint64_t)kmalloc(1000), PAGE_SIZE));
-  kmemset(buf, 0xE9, 1000);
-  sata_write_at(IFACE_2_SATA_DEV(sata_generic.ifaces), 0, 1, buf);
+  } 
 }

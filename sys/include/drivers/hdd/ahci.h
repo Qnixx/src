@@ -5,8 +5,7 @@
 #include <lib/asm.h>
 
 #define SATA_DEV_MAGIC 0xCA7511
-
-
+#define IFACE_2_SATA_DEV(iface) (((sata_dev_t*)iface))
 
 
 typedef volatile struct HBA_PORT {
@@ -130,5 +129,13 @@ typedef struct {
 
 void ahci_init(void);
 
+/*
+ *  Device arg can be found 
+ *  from the driver interface.
+ *
+ */
+
+void sata_read_drive(sata_dev_t* device, uint64_t lba, uint32_t sector_count, uint16_t* buf);
+void sata_write_drive(sata_dev_t* device, uint64_t lba, uint32_t sector_count, uint16_t* buf);
 
 #endif

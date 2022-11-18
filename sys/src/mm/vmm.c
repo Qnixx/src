@@ -125,3 +125,9 @@ void* vmm_alloc_page(void) {
 
   return (void*)ALIGN_DOWN((ptr + VMM_HIGHER_HALF), PAGE_SIZE);
 }
+
+
+void vmm_free_page(void* page) {
+  uintptr_t addr = (uint64_t)page;
+  pmm_free(addr - VMM_HIGHER_HALF);
+}
