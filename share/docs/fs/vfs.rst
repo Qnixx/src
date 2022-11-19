@@ -61,14 +61,3 @@ It takes *two* arguments:
 ``fs``  -> *filesystem descriptor*
 
 ``mountpoint`` -> *path to mount the filesystem to*
-
-
-==============
-How it works
-==============
-
-When a filesystem gets mounted it will lead
-to ``vfs_mountfs()`` being called which does
-the following:
-
-- Checks if that mountpoint exists.
