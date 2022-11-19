@@ -67,6 +67,6 @@ Usage of ``__`` prefix.
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Do not use this everywhere as it makes things messy.
 
-Only use this if yoy are naming a function 
+Only use this if you are naming a function 
 that should *only* be used by others
 if they know what they are doing.
