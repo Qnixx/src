@@ -38,10 +38,5 @@ void xhci_init(void) {
   }
 
   PRINTK_SERIAL("[%s]: XHCI controller found on PCI bus %d, slot %d\n", MODULE_NAME, dev.bus, dev.slot);
-<<<<<<< HEAD
-=======
-
   iobase = ((uint64_t)dev.bars[1] << 32 | dev.bars[0]);
-  PRINTK_SERIAL("[%s]: Controller has I/O base @%x\n", MODULE_NAME, iobase); 
->>>>>>> 21ec915fcaa67ff7cac7be7aa3f9578a58b774b0
 }
