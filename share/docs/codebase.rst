@@ -51,3 +51,22 @@ Peripheral Component Interconnect (PCI)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A computer bus for attaching hardware devices
 like network controllers or hard drive controllers.
+
+
+=========================
+Qnixx coding conventions
+=========================
+
+Usage of the ``static`` keyword.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- use ``static`` for functions if *only* used internally to avoid name clashes.
+- use ``static`` for global variables if *only* used internally to avoid clashes *and* to prevent accidental change from outside.
+
+Usage of ``__`` prefix.
+~~~~~~~~~~~~~~~~~~~~~~~~
+Do not use this everywhere as it makes things messy.
+
+Only use this if you are naming a function
+that should *only* be used by others
+if they know what they are doing.
