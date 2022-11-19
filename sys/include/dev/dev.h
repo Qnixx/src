@@ -13,6 +13,7 @@
 
 #define DEV_BLOCK 0x1
   #define DEV_BLOCK_SATA 0x1
+  #define DEV_BLOCK_USB 0x2
 
 #define DEV_NET 0x2
   #define DEV_NET_ETHERNET 0x1
