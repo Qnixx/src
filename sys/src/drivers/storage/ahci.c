@@ -316,7 +316,7 @@ void ahci_init(void)  {
   printk("[%s]: Bus mastering enabled for SATA controller.\n", MODULE_NAME);
 
   // Get ABAR.
-  abar = (HBA_MEM*)(uint64_t)dev.bar5;
+  abar = (HBA_MEM*)(uint64_t)dev.bars[5];
   
   // Take control over the HBA.
   take_ownership();

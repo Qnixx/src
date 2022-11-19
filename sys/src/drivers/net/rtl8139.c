@@ -208,7 +208,7 @@ void rtl8139_init(void) {
   printk("[%s]: Bus mastering enabled for the NIC.\n", MODULE_NAME);
 
   // Fetch the I/O base.
-  iobase = dev.bar0 & 0xFFFFFFFC;
+  iobase = dev.bars[0] & 0xFFFFFFFC;
   PRINTK_SERIAL("[%s]: Card has I/O base @%x\n", MODULE_NAME, iobase); 
 
   // Perform a software reset.
