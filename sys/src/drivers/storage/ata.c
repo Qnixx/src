@@ -1,4 +1,4 @@
-#include <drivers/hdd/ata.h>
+#include <drivers/storage/ata.h>
 #include <arch/x86/io.h>
 #include <lib/module.h>
 #include <lib/log.h>

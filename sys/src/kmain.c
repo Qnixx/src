@@ -3,7 +3,7 @@
 #include <drivers/net/rtl8139.h>
 #include <drivers/timer/pit.h>
 #include <drivers/timer/rtc.h>
-#include <drivers/hdd/ahci.h>
+#include <drivers/storage/ahci.h>
 #include <lib/log.h>
 #include <lib/string.h>
 #include <lib/module.h>

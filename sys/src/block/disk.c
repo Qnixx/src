@@ -1,5 +1,5 @@
 #include <block/disk.h>
-#include <drivers/hdd/ahci.h>
+#include <drivers/storage/ahci.h>
 #include <lib/panic.h>
 #include <lib/log.h>
 #include <lib/assert.h>

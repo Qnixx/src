@@ -1,4 +1,4 @@
-#include <drivers/hdd/ahci.h>
+#include <drivers/storage/ahci.h>
 #include <drivers/timer/pit.h>
 #include <arch/bus/pci.h>
 #include <lib/module.h>
