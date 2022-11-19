@@ -37,5 +37,4 @@ void xhci_init(void) {
   }
 
   PRINTK_SERIAL("[%s]: XHCI controller found on PCI bus %d, slot %d\n", MODULE_NAME, dev.bus, dev.slot);
-
 }
