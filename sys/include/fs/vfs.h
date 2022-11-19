@@ -29,13 +29,15 @@ typedef struct {
 } fs_ops_t;
 
 typedef struct VFS_FS {
+  char name[VFS_FILENAME_LENGTH];
   vfs_superblock_t superblock;
   fs_ops_t ops;
+  struct VFS_FS* next;
 } fs_t;
 
 
 void vfs_init(void);
-void vfs_mount(fs_t* fs, const char* mountpoint);
+int vfs_mountfs(fs_t* fs, const char* mountpoint);
 
 /*
  *  n_filenames should be set to the address

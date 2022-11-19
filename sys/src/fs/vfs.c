@@ -4,12 +4,19 @@
 #include <lib/log.h>
 #include <lib/module.h>
 #include <lib/assert.h>
+#include <sys/errno.h>
 
 
 MODULE("vfs");
 
 
-static vfs_node_t* root = NULL;
+static fs_t* mount_list = NULL;
+static fs_t* mount_list_head = NULL;
+
+
+static uint8_t mountpoint_exists(const char* mountpoint_name) {
+  return 0;
+}
 
  
 char** vfs_parse_path(const char* path, size_t* n_filenames, uint8_t* is_dir) {
@@ -57,19 +64,24 @@ char** vfs_parse_path(const char* path, size_t* n_filenames, uint8_t* is_dir) {
 }
 
 
-void vfs_init_node(vfs_node_t* node) {
-  node->children = kmalloc(sizeof(vfs_node_t));
-  node->n_children = 0;
+int vfs_mountfs(fs_t* fs, const char* mountpoint) {
+  size_t mountpoint_len = kstrlen(mountpoint);
+  if (mountpoint_len >= VFS_FILENAME_LENGTH-1) {
+    return -ENAMETOOLONG;
+  }
+
+
+
+  return 0;
 }
 
 
 void vfs_init(void) {
-  // Allocate memory for the root mountpoint and set it
-  // up.
-  root = kmalloc(sizeof(vfs_node_t));
-  root->flags = VFS_FLAG_MOUNTPOINT;
-  root->index = 0;
-  vfs_init_node(root);
+  // Allocate memory for the mountlist.
+  mount_list = kmalloc(sizeof(fs_t));
+  mount_list->next = NULL;
+  kmemcpy(mount_list->name, "/", 2);
+  mount_list_head = mount_list;
 
   PRINTK_SERIAL("[%s]: Finished setting up VFS root mountpoint.\n", MODULE_NAME);
 }
