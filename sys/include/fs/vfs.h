@@ -3,41 +3,52 @@
 
 #include <lib/types.h>
 
+/*
+ *  Documentation for this file is in
+ *  share/docs/fs/vfs.rst
+ *
+ */
+
 #define VFS_FILENAME_LENGTH 150
 
 #define VFS_FLAG_MOUNTPOINT (1 << 0)
 #define VFS_FLAG_FILE (1 << 1)
 #define VFS_FLAG_DIRECTORY (1 << 2)
 
+struct VFS_FS;
 
-struct VFSNode;
+typedef int(*create_t)(struct VFS_FS* fs, const char* path);
 
-typedef int(*create_t)(struct VFSNode* _this, const char* name);
+typedef struct {
+  size_t size;        /* Size of the file system in blocks */
+  size_t blocksize;   /* Blocksize for this filesystem */
+} vfs_superblock_t;
 
-/*
- *  flags: Flags that tell the type of file this
- *         is.
- *
- *  children: Node's children.
- *  n_children: Child count.
- *  index: Index of this file into this specific node.
- *
- */
+typedef struct {
+  create_t create_file;
+} fs_ops_t;
 
-typedef struct VFSNode {
-  char filename[VFS_FILENAME_LENGTH];
-  uint8_t flags;
-  struct VFSNode** children;
-  size_t n_children;
-  size_t index;
-  create_t create;
-} vfs_node_t;
+typedef struct VFS_FS {
+  vfs_superblock_t superblock;
+  fs_ops_t ops;
+} fs_t;
 
 
 void vfs_init(void);
-void vfs_init_node(vfs_node_t* node);
-void vfs_push(vfs_node_t* to, vfs_node_t* n);
-uint8_t file_exists(struct VFSNode* n, const char* name);
-vfs_node_t* vfs_create_fs(const char* mountpoint_name);
+void vfs_mount(fs_t* fs, const char* mountpoint);
+
+/*
+ *  n_filenames should be set to the address
+ *  of a size_t variable which would then hold
+ *  the amount of filenames in the path.
+ *
+ *  is_dir should be set to the address
+ *  of a uint8_t which will then hold
+ *  a 1 if the path points to a directory or a
+ *  0 if it doesn't.
+ *
+ */
+
+char** vfs_parse_path(const char* path, size_t* n_filenames, uint8_t* is_dir);
 
 #endif

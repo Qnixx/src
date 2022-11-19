@@ -26,5 +26,6 @@ typedef signed char int8_t;
 typedef unsigned long long uint64_t;
 typedef uint8_t bool;
 typedef uint32_t wchar_t;
+typedef size_t off_t;
 
 #endif

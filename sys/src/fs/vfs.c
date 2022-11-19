@@ -11,56 +11,55 @@ MODULE("vfs");
 
 static vfs_node_t* root = NULL;
 
-static uint8_t mountpoint_exists(const char* name) {
-  for (size_t i = 0; i < root->n_children; ++i) {
-    if (kstrcmp(root->children[i]->filename, name) == 0) {
-      return 1;
+ 
+char** vfs_parse_path(const char* path, size_t* n_filenames, uint8_t* is_dir) {
+  // Current path (path0/path1/path3)
+  char current_filename[VFS_FILENAME_LENGTH];
+  size_t current_filename_idx = 0;
+  
+  // List of paths.
+  char** path_list = kmalloc(sizeof(char*));
+  size_t n_path_seperators = 0;
+
+  const char* ptr;
+  for (ptr = path; *ptr; ++ptr) {
+    if (current_filename_idx >= VFS_FILENAME_LENGTH-1) {
+      // Path too long!
+      kfree(path_list);
+      return NULL;
     }
+
+    if (*ptr == '/') {
+      current_filename[current_filename_idx] = '\0';      // Null terminate.
+      kmemcpy(&path_list[n_path_seperators++], current_filename, kstrlen(current_filename));
+      path_list = krealloc(path_list, sizeof(char*) * (n_path_seperators + 2));
+      
+      // Reset the current filename.
+      kmemzero(current_filename, sizeof(current_filename));
+      current_filename_idx = 0;
+      continue;
+    }
+
+    current_filename[current_filename_idx++] = *ptr;
   }
 
-  return 0;
-}
-
-
-uint8_t file_exists(struct VFSNode* n, const char* name) {
-  for (size_t i = 0; i < n->n_children; ++i) {
-    if (kstrcmp(n->children[i]->filename, name) == 0) {
-      return 1;
-    }
+  if (*(ptr - 1) == '/' && is_dir != NULL) {
+    *is_dir = 1;
+  } else if (is_dir != NULL) {
+    *is_dir = 0;
   }
 
-  return 0;
+  if (n_filenames != NULL) {
+    *n_filenames = n_path_seperators-1;
+  }
+
+  return path_list;
 }
 
 
 void vfs_init_node(vfs_node_t* node) {
-  kmemcpy(&node->filename, "/", 1);
-  
   node->children = kmalloc(sizeof(vfs_node_t));
   node->n_children = 0;
-}
-
-
-void vfs_push(vfs_node_t* to, vfs_node_t* n) {
-  to->children[to->n_children++] = n;
-  to->children = krealloc(to->children, sizeof(vfs_node_t) * (to->n_children + 2));
-}
-
-
-vfs_node_t* vfs_create_fs(const char* mountpoint_name) {
-  ASSERT(root != NULL, "Root VFS node not setup!\n");
-
-  if (mountpoint_exists(mountpoint_name))
-    return NULL;
-
-  vfs_node_t* new = kmalloc(sizeof(vfs_node_t));
-  new->flags = VFS_FLAG_MOUNTPOINT;
-  new->index = root->n_children;
-  vfs_init_node(root);
-
-  root->children[root->n_children++] = new;
-  root->children = krealloc(root->children, sizeof(vfs_node_t) * (root->n_children + 2));
-  return new;
 }
 
 
