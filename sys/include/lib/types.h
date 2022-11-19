@@ -1,6 +1,8 @@
 #ifndef TYPES_H_
 #define TYPES_H_
 
+#include <stdarg.h>
+
 #define NULL (void*)0ULL
 #define true 1
 #define false 0
