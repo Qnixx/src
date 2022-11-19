@@ -22,7 +22,7 @@ typedef int(*create_t)(struct VFS_FS* fs, const char* path);
 typedef struct {
   size_t size;        /* Size of the file system in blocks */
   size_t blocksize;   /* Blocksize for this filesystem */
-} vfs_superblock_t;
+} fs_descriptor_t;
 
 typedef struct {
   create_t create_file;
@@ -30,7 +30,8 @@ typedef struct {
 
 typedef struct VFS_FS {
   char name[VFS_FILENAME_LENGTH];
-  vfs_superblock_t superblock;
+  uint16_t flags;
+  fs_descriptor_t desc;
   fs_ops_t ops;
   struct VFS_FS* next;
 } fs_t;

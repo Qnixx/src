@@ -15,6 +15,11 @@ static fs_t* mount_list_head = NULL;
 
 
 static uint8_t mountpoint_exists(const char* mountpoint_name) {
+  for (fs_t* current = mount_list; *current; current = current->next) {
+    if (kstrcmp(current->name, mountpoint_name) == 0)
+      return 1;
+  }
+
   return 0;
 }
 
@@ -70,8 +75,15 @@ int vfs_mountfs(fs_t* fs, const char* mountpoint) {
     return -ENAMETOOLONG;
   }
 
-
-
+  if (mountpoint_exists(mountpoint)) {
+    return -EEXIST;
+  }
+  
+  // Allocate a new fs node.
+  mount_list_head->next = kmalloc(sizeof(fs_t));
+  mount_list_head = mount_list_head->next;
+  mount_list_head->flags |= VFS_FLAG_MOUNTPOINT;
+  memcpy(mount_list_head->name, mountpoint, mountpoint_len);
   return 0;
 }
 
