@@ -56,22 +56,12 @@ static inline uint8_t read_prog_if(uint8_t bus, uint8_t slot, uint8_t func) {
   return pci_config_read(bus, slot, func, 0x8) >> 8;
 }
 
-static inline uint32_t get_bar0(uint8_t bus, uint8_t slot, uint8_t func) {
-  uint16_t lo = pci_config_read(bus, slot, func, 0x10);
-  uint16_t hi = pci_config_read(bus, slot, func, 0x12);
-  return ((uint32_t)hi << 16 | lo);
-}
+static inline uint32_t get_bar(uint8_t bus, uint8_t slot, uint8_t func, uint8_t bar) {
+  if(bar > 5) return 0;
 
-
-static inline uint32_t get_bar4(uint8_t bus, uint8_t slot, uint8_t func) {
-  uint16_t lo = pci_config_read(bus, slot, func, 0x20);
-  uint16_t hi = pci_config_read(bus, slot, func, 0x22);
-  return ((uint32_t)hi << 16 | lo);
-}
-
-static inline uint32_t get_bar5(uint8_t bus, uint8_t slot, uint8_t func) {
-  uint16_t lo = pci_config_read(bus, slot, func, 0x24);
-  uint16_t hi = pci_config_read(bus, slot, func, 0x26);
+  uint8_t offset = 0x10 + (bar * sizeof(uint32_t));
+  uint16_t lo = pci_config_read(bus, slot, func, offset);
+  uint16_t hi = pci_config_read(bus, slot, func, offset + 2);
   return ((uint32_t)hi << 16 | lo);
 }
 
@@ -79,9 +69,7 @@ static inline uint32_t get_bar5(uint8_t bus, uint8_t slot, uint8_t func) {
 static inline void init_dev(pci_device_t* dev, uint8_t bus, uint8_t slot, uint8_t func) {
   dev->irq_line = read_irq_line(bus, slot, func);
   dev->valid = 1;
-  dev->bar0 = get_bar0(bus, slot, func);
-  dev->bar4 = get_bar4(bus, slot, func);
-  dev->bar5 = get_bar5(bus, slot, func);
+  for(size_t i = 0; i < 6; i++) dev->bars[i] = get_bar(bus, slot, func, i);
   dev->bus = bus;
   dev->slot = slot;
   dev->func = func;
