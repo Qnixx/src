@@ -19,6 +19,7 @@
 #include <net/udp.h>
 #include <net/if.h>
 #include <proc/proc.h>
+#include <fs/ext2.h>
 
 MODULE("kmain");
 
@@ -34,6 +35,12 @@ static void init_drivers(void) {
   rtl8139_init();
   init_pit();
   ahci_init();
+}
+
+
+static void init_fs(void) {
+  ext2_init();
+  printk("[%s]: File systems initialized.\n", MODULE_NAME);
 }
 
 
@@ -58,6 +65,8 @@ _noreturn void _start(void) {
   ioapic_init();
   init_drivers();
   ASMV("sti");
+  
+  init_fs();
 
   if_manager_init();
   
