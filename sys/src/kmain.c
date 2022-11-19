@@ -4,6 +4,7 @@
 #include <drivers/timer/pit.h>
 #include <drivers/timer/rtc.h>
 #include <drivers/storage/ahci.h>
+#include <drivers/usb/xhci.h>
 #include <lib/log.h>
 #include <lib/string.h>
 #include <lib/module.h>
@@ -35,6 +36,7 @@ static void init_drivers(void) {
   rtl8139_init();
   init_pit();
   ahci_init();
+  xhci_init();
 }
 
 
