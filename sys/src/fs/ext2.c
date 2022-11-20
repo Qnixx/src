@@ -13,7 +13,8 @@ static int create(fs_t* fs, const char* path) {
 }
 
 
-static fs_descriptor_t desc = {
+// TODO: Get rid of unused attribute.
+__attribute__((unused)) static fs_descriptor_t desc = {
   .size = 0,
   .blocksize = 0,
   .ops = { create }
