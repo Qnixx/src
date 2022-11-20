@@ -72,6 +72,11 @@ char** vfs_parse_path(const char* path, size_t* n_filenames, uint8_t* is_dir) {
 
 
 int vfs_mountfs(fs_t* fs, const char* mountpoint, fs_descriptor_t* desc) {
+  // Get rid of '/' in front if there is one.
+  if (*mountpoint == '/') {
+    ++mountpoint;
+  }
+
   size_t mountpoint_len = kstrlen(mountpoint);
   if (mountpoint_len >= VFS_FILENAME_LENGTH-1) {
     return -ENAMETOOLONG;
