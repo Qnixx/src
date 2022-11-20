@@ -26,7 +26,7 @@ static dev_driver_t xhci_generic = {
 
 
 static pci_device_t dev;
-static uint64_t iobase;
+static uint64_t mmiobase;
 
 
 void xhci_init(void) {
@@ -38,5 +38,9 @@ void xhci_init(void) {
   }
 
   PRINTK_SERIAL("[%s]: XHCI controller found on PCI bus %d, slot %d\n", MODULE_NAME, dev.bus, dev.slot);
-  iobase = ((uint64_t)dev.bars[1] << 32 | dev.bars[0]);
+  mmiobase = dev.bars[0];
+
+  xhci_caps_t* caps = (xhci_caps_t*)mmiobase;
+  xhci_ops_t* ops = (xhci_ops_t*)(caps + caps->cap_length);
+  xhci_port_t* ports = (xhci_port_t*)(ops + 0x400);
 }
