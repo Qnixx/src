@@ -7,7 +7,7 @@
 MODULE("heap");
 
 #define HEAP_DEBUG 0
-#define HEAP_PAGES 80
+#define HEAP_PAGES 90
 #define MAX_HEAP_SIZE 0x1000*HEAP_PAGES
 
 static heapblk_t* heap_head = NULL;
