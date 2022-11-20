@@ -152,11 +152,11 @@ void sata_read_drive(sata_dev_t* device, uint64_t lba, uint32_t sector_count, ui
   fis->device = 1 << 6;        // LBA mode.
 
   fis->lba0 = (uint8_t)(lba & 0xFF);
-  fis->lba0 = (uint8_t)((lba >> 8) & 0xFF);
-  fis->lba0 = (uint8_t)((lba >> 16) & 0xFF);
-  fis->lba0 = (uint8_t)((lba >> 24) & 0xFF);
-  fis->lba0 = (uint8_t)((lba >> 32) & 0xFF);
-  fis->lba0 = (uint8_t)((lba >> 40) & 0xFF);
+  fis->lba1 = (uint8_t)((lba >> 8) & 0xFF);
+  fis->lba2 = (uint8_t)((lba >> 16) & 0xFF);
+  fis->lba3 = (uint8_t)((lba >> 24) & 0xFF);
+  fis->lba4 = (uint8_t)((lba >> 32) & 0xFF);
+  fis->lba5 = (uint8_t)((lba >> 40) & 0xFF);
   fis->countl = sector_count & 0xFF;
   fis->counth = (sector_count >> 8) & 0xFF;
 
