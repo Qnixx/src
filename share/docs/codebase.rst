@@ -85,7 +85,7 @@ Curly braces like so:
 Indentation
 ~~~~~~~~~~~
 Use spaces instead of tabs and have an 
-indent with of 2.
+indent width of 2.
 
 For neovim users:
 ::
