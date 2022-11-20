@@ -60,11 +60,11 @@ Qnixx coding conventions
 Usage of the ``static`` keyword.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Reduce linker namespace pollution
+- Reduce linker namespace pollution.
 
-- Hint to the optimizer (which may decide to inline a large function if it is static and called just once)
+- Hint to the optimizer (which may decide to inline a large function if it is static and called just once).
 
-- Can be detected as dead code when it is no longer used
+- Can be detected as dead code when it is no longer used.
 
 - Intention of locality is documented.
 
