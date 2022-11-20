@@ -20,25 +20,25 @@ struct VFS_FS;
 typedef int(*create_t)(struct VFS_FS* fs, const char* path);
 
 typedef struct {
-  size_t size;        /* Size of the file system in blocks */
-  size_t blocksize;   /* Blocksize for this filesystem */
-} fs_descriptor_t;
-
-typedef struct {
   create_t create_file;
 } fs_ops_t;
+
+typedef struct {
+  size_t size;        /* Size of the file system in blocks */
+  size_t blocksize;   /* Blocksize for this filesystem */
+  fs_ops_t ops;
+} fs_descriptor_t;
 
 typedef struct VFS_FS {
   char name[VFS_FILENAME_LENGTH];
   uint16_t flags;
-  fs_descriptor_t desc;
-  fs_ops_t ops;
+  fs_descriptor_t* desc;
   struct VFS_FS* next;
 } fs_t;
 
 
 void vfs_init(void);
-int vfs_mountfs(fs_t* fs, const char* mountpoint);
+int vfs_mountfs(fs_t* fs, const char* mountpoint, fs_descriptor_t* desc);
 
 /*
  *  n_filenames should be set to the address

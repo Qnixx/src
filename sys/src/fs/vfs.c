@@ -6,6 +6,8 @@
 #include <lib/assert.h>
 #include <sys/errno.h>
 
+#define VFS_DEBUG 1
+
 
 MODULE("vfs");
 
@@ -15,7 +17,7 @@ static fs_t* mount_list_head = NULL;
 
 
 static uint8_t mountpoint_exists(const char* mountpoint_name) {
-  for (fs_t* current = mount_list; *current; current = current->next) {
+  for (fs_t* current = mount_list; current; current = current->next) {
     if (kstrcmp(current->name, mountpoint_name) == 0)
       return 1;
   }
@@ -69,9 +71,16 @@ char** vfs_parse_path(const char* path, size_t* n_filenames, uint8_t* is_dir) {
 }
 
 
-int vfs_mountfs(fs_t* fs, const char* mountpoint) {
+int vfs_mountfs(fs_t* fs, const char* mountpoint, fs_descriptor_t* desc) {
   size_t mountpoint_len = kstrlen(mountpoint);
   if (mountpoint_len >= VFS_FILENAME_LENGTH-1) {
+    return -ENAMETOOLONG;
+  }
+
+  size_t n_filenames = 0;
+  kfree(vfs_parse_path(mountpoint, &n_filenames, NULL));
+
+  if (n_filenames > 1) {
     return -ENAMETOOLONG;
   }
 
@@ -83,7 +92,13 @@ int vfs_mountfs(fs_t* fs, const char* mountpoint) {
   mount_list_head->next = kmalloc(sizeof(fs_t));
   mount_list_head = mount_list_head->next;
   mount_list_head->flags |= VFS_FLAG_MOUNTPOINT;
-  memcpy(mount_list_head->name, mountpoint, mountpoint_len);
+  mount_list_head->desc = desc;
+  kmemcpy(mount_list_head->name, mountpoint, mountpoint_len); 
+
+  if (VFS_DEBUG) {
+    printk("[%s]: Mounted %s\n", MODULE_NAME, mountpoint);
+  }
+
   return 0;
 }
 
@@ -95,5 +110,5 @@ void vfs_init(void) {
   kmemcpy(mount_list->name, "/", 2);
   mount_list_head = mount_list;
 
-  PRINTK_SERIAL("[%s]: Finished setting up VFS root mountpoint.\n", MODULE_NAME);
+  PRINTK_SERIAL("[%s]: Mounted '/'\n", MODULE_NAME);
 }
