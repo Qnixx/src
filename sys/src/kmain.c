@@ -20,6 +20,8 @@
 #include <net/if.h>
 #include <proc/proc.h>
 #include <fs/ext2.h>
+#include <fs/ramfs.h>
+#include <fs/vfs.h>
 
 MODULE("kmain");
 
@@ -39,7 +41,9 @@ static void init_drivers(void) {
 
 
 static void init_fs(void) {
+  vfs_init();
   ext2_init();
+  ramfs_init("/liveusr/");
   printk("[%s]: File systems initialized.\n", MODULE_NAME);
 }
 
