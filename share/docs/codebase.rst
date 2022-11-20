@@ -67,6 +67,26 @@ Usage of ``__`` prefix.
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Do not use this everywhere as it makes things messy.
 
-Only use this if you are naming a function 
+Only use this if you are naming a function
 that should *only* be used by others
 if they know what they are doing.
+
+Brace style
+~~~~~~~~~~~~
+Curly braces like so:
+::
+  void function(void) {
+    ..
+  }
+
+**Note the void keyword in the argument list.**
+
+
+Indentation
+~~~~~~~~~~~
+Use spaces instead of tabs and have an 
+indent width of 2.
+
+For neovim users:
+::
+  set expandtab ts=2 sw=2 number nowrap
