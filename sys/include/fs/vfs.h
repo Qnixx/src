@@ -30,28 +30,25 @@ typedef struct {
 } fs_descriptor_t;
 
 typedef struct VFS_FS {
-  char name[VFS_FILENAME_LENGTH];
+  char* path;
   uint16_t flags;
   fs_descriptor_t* desc;
   struct VFS_FS* next;
 } fs_t;
 
 
+typedef struct ParsedPath {
+  char filename[VFS_FILENAME_LENGTH];
+  uint8_t is_dir;
+  struct ParsedPath* next;
+} parsed_path_t;
+
+
 void vfs_init(void);
-int vfs_mountfs(fs_t* fs, const char* mountpoint, fs_descriptor_t* desc);
+int vfs_mountfs(const char* mountpoint, fs_descriptor_t* desc);
 
-/*
- *  n_filenames should be set to the address
- *  of a size_t variable which would then hold
- *  the amount of filenames in the path.
- *
- *  is_dir should be set to the address
- *  of a uint8_t which will then hold
- *  a 1 if the path points to a directory or a
- *  0 if it doesn't.
- *
- */
 
-char** vfs_parse_path(const char* path, size_t* n_filenames, uint8_t* is_dir);
+parsed_path_t* vfs_parse_path(const char* path);
+void vfs_free_parse_nodes(parsed_path_t* base);
 
 #endif

@@ -16,94 +16,96 @@ static fs_t* mount_list = NULL;
 static fs_t* mount_list_head = NULL;
 
 
-static uint8_t mountpoint_exists(const char* mountpoint_name) {
+static uint8_t mountpoint_exists(const char* mountpoint) {
   for (fs_t* current = mount_list; current; current = current->next) {
-    if (kstrcmp(current->name, mountpoint_name) == 0)
+    if (kstrcmp(current->path, mountpoint) == 0)
       return 1;
   }
 
   return 0;
 }
 
- 
-char** vfs_parse_path(const char* path, size_t* n_filenames, uint8_t* is_dir) {
-  // Current path (path0/path1/path3)
-  char current_filename[VFS_FILENAME_LENGTH];
-  size_t current_filename_idx = 0;
-  
-  // List of paths.
-  char** path_list = kmalloc(sizeof(char*));
-  size_t n_path_seperators = 0;
 
-  const char* ptr;
-  for (ptr = path; *ptr; ++ptr) {
-    if (current_filename_idx >= VFS_FILENAME_LENGTH-1) {
-      // Path too long!
-      kfree(path_list);
-      return NULL;
-    }
-
-    if (*ptr == '/') {
-      current_filename[current_filename_idx] = '\0';      // Null terminate.
-      kmemcpy(&path_list[n_path_seperators++], current_filename, kstrlen(current_filename));
-      path_list = krealloc(path_list, sizeof(char*) * (n_path_seperators + 2));
-      
-      // Reset the current filename.
-      kmemzero(current_filename, sizeof(current_filename));
-      current_filename_idx = 0;
-      continue;
-    }
-
-    current_filename[current_filename_idx++] = *ptr;
+void vfs_free_parse_nodes(parsed_path_t* base) {
+  while (base) {
+    parsed_path_t* tmp = base->next;
+    kfree(base);
+    base = tmp;
   }
-
-  if (*(ptr - 1) == '/' && is_dir != NULL) {
-    *is_dir = 1;
-  } else if (is_dir != NULL) {
-    *is_dir = 0;
-  }
-
-  if (n_filenames != NULL) {
-    *n_filenames = n_path_seperators-1;
-  }
-
-  return path_list;
 }
 
 
-int vfs_mountfs(fs_t* fs, const char* mountpoint, fs_descriptor_t* desc) {
-  // Get rid of '/' in front if there is one.
-  if (*mountpoint == '/') {
-    ++mountpoint;
+static uint8_t is_valid_path(const char* path) {
+  for (const char* ptr = path; *ptr; ++ptr) {
+    char lowercase = (*ptr | (1 << 5));
+    if (lowercase < 'a' || lowercase > 'z') {
+      return 0;
+    }
   }
 
-  size_t mountpoint_len = kstrlen(mountpoint);
-  if (mountpoint_len >= VFS_FILENAME_LENGTH-1) {
-    return -ENAMETOOLONG;
+  return 1;
+}
+
+ 
+parsed_path_t* vfs_parse_path(const char* path) {
+  if (!(is_valid_path(path))) {
+    return NULL;
   }
 
-  size_t n_filenames = 0;
-  kfree(vfs_parse_path(mountpoint, &n_filenames, NULL));
+  char current_filename[VFS_FILENAME_LENGTH];
+  size_t path_len = kstrlen(path);
 
-  if (n_filenames > 1) {
-    return -ENAMETOOLONG;
+  // Parse nodes.
+  parsed_path_t* base_node = kmalloc(sizeof(parsed_path_t));
+  parsed_path_t* current_node = base_node;
+  base_node->next = NULL;
+
+
+  size_t cfname_idx = 0;      // Current filename index.
+  for (size_t i = 0; i < path_len; ++i) {
+    if (cfname_idx >= VFS_FILENAME_LENGTH) {
+      vfs_free_parse_nodes(base_node);
+    }
+
+    if (path[i] == '/') {
+      current_filename[cfname_idx] = '\0';
+      kmemcpy(current_node->filename, current_filename, kstrlen(current_filename));
+      kmemzero(current_filename, sizeof(current_filename));
+      cfname_idx = 0;
+
+      current_node->is_dir = 1;
+      
+      // Make a new node.
+      current_node->next = kmalloc(sizeof(parsed_path_t));
+      current_node = current_node->next;
+      current_node->next = NULL;
+      continue;
+    } else if (i == path_len-1) {
+      current_node->next = NULL;
+      current_node->is_dir = 0;
+      kmemcpy(current_node->filename, current_filename, kstrlen(current_filename));
+      break;
+    }
+
+    current_filename[cfname_idx++] = path[i];
   }
 
-  if (mountpoint_exists(mountpoint)) {
-    return -EEXIST;
+  return base_node;
+}
+
+
+int vfs_mountfs(const char* mountpoint, fs_descriptor_t* desc) {
+  if (mountpoint_exists(mountpoint) || !(is_valid_path(mountpoint))) {
+    return 1;
   }
-  
-  // Allocate a new fs node.
+
   mount_list_head->next = kmalloc(sizeof(fs_t));
   mount_list_head = mount_list_head->next;
-  mount_list_head->flags |= VFS_FLAG_MOUNTPOINT;
-  mount_list_head->desc = desc;
-  kmemcpy(mount_list_head->name, mountpoint, mountpoint_len); 
+  mount_list_head->next = NULL;
 
-  if (VFS_DEBUG) {
-    printk("[%s]: Mounted %s\n", MODULE_NAME, mountpoint);
-  }
-
+  size_t mountpoint_len = kstrlen(mountpoint);
+  mount_list_head->path = kmalloc(sizeof(char*) * mountpoint_len);
+  kmemcpy(mount_list_head->path, mountpoint, mountpoint_len);
   return 0;
 }
 
@@ -112,7 +114,7 @@ void vfs_init(void) {
   // Allocate memory for the mountlist.
   mount_list = kmalloc(sizeof(fs_t));
   mount_list->next = NULL;
-  kmemcpy(mount_list->name, "/", 2);
+  mount_list->path = "/";
   mount_list_head = mount_list;
 
   PRINTK_SERIAL("[%s]: Mounted '/'\n", MODULE_NAME);
