@@ -1,7 +1,7 @@
 :Author:
   Ian Marco Moffett
 
-:Last updated: 2022-11-19
+:Last updated: 2022-11-20
 
 ===============
 Structures
@@ -10,19 +10,20 @@ Structures
 The Qnixx VFS module can be found in ``sys/include/fs/vfs.h``.
 
 
-The ``vfs_superblock_t`` struct:
+The ``fs_descriptor_t`` struct:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This struct holds information about the filesystem,
-each filesystem will have it's own ``vfs_superblock_t``
+each filesystem will have it's own ``fs_descriptor_t``
 struct.
 
-``vfs_superblock_t`` fields:
+``fs_descriptor_t`` fields:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ``size`` -> *Size of the filesystem in blocks.*
 
 ``blocksize`` -> *Blocksize for the filesystem.*
 
+``ops`` -> *Filesystem operations*
 
 The ``fs_ops_t`` struct:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,7 +33,7 @@ operations.
 
 The ``fs_t`` struct:
 ~~~~~~~~~~~~~~~~~~~~~
-The filesystem descriptor.
+Represents a filesystem.
 
 
 =================
@@ -50,14 +51,14 @@ Interface
 
 The ``vfs_parse_path()`` function:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-This function parses a path a returns the array
-of filenames (**note: this array must be freed with** ``kfree()``)
+This function parses a path a returns a linked list of parse nodes
+ (**note: this array must be freed with** ``vfs_free_parse_nodes()``)
 
-The ``vfs_mount()`` function.
+The ``vfs_mountfs()`` function.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This function mounts a filesystem.
 It takes *two* arguments:
 
-``fs``  -> *filesystem descriptor*
+``mountpoint``  -> *mountpoint path*
 
-``mountpoint`` -> *path to mount the filesystem to*
+``desc`` -> *Filesystem descriptor*
