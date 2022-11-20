@@ -60,8 +60,8 @@ Qnixx coding conventions
 Usage of the ``static`` keyword.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- use ``static`` for functions if *only* used internally to avoid name clashes.
-- use ``static`` for global variables if *only* used internally to avoid clashes *and* to prevent accidental change from outside.
+- use ``static`` for functions if *only* used internally to make shorter names and avoid name clashes *or* to enforce a uniform way of access.
+- use ``static`` for global variables if *only* used internally to make shorter names, avoid clashes *and* to prevent accidental change from outside.
 
 Usage of ``__`` prefix.
 ~~~~~~~~~~~~~~~~~~~~~~~~
