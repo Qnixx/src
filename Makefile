@@ -1,5 +1,5 @@
 LOCAL_IP = 192.168.1.152
-INSTALL_DIR = /media/kai/6402-F3211
+INSTALL_DIR = /qnixx_install
 QEMU_ARGS = -cpu qemu64 -M q35 -m 3G -cdrom Qnixx.iso -boot d -smp 4 -rtc base=localtime -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0 -serial stdio -drive id=disk,format=raw,file=sbin/diskimg.img,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0,serial=111111111111111111111
 CFILES = $(shell find sys/src/ -name "*.c")
 CFLAGS = -fexceptions -std=gnu11 -ffreestanding -fno-stack-protector \
