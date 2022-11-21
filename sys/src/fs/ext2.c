@@ -53,13 +53,14 @@ static inode_t* __read_inode(unsigned int inode_idx, uint8_t** buf) {
 
 
 
-static char* __read_dirname(unsigned int inode_idx, uint8_t** buf) {
+static void __read_dirnames(unsigned int inode_idx, uint8_t** buf) {
   inode_t* inode = __read_inode(inode_idx, buf);
   if (inode == NULL) {
-    return NULL;
+    return;
   }
-
-  char* filename = kmalloc(sizeof(char*) * 256);
+  
+  char* orig_filename = kmalloc(sizeof(char*) * 256);
+  char* filename = orig_filename;
   kmemzero(filename, sizeof(256));
 
   uint8_t* block = (uint8_t*)read_block(inode->blocks[0]);
@@ -70,8 +71,8 @@ static char* __read_dirname(unsigned int inode_idx, uint8_t** buf) {
     printk("Found file:  %s\n", filename);
     filename += direntry->size;
   }
-
-  return filename;
+  
+  kfree(orig_filename);
 }
 
 
@@ -87,7 +88,7 @@ void ext2_init(void) {
   // Read superblock
   fs.sb = vmm_alloc_page();
   disk_read_lba(fs.block_driver, SUPERBLOCK_LBA, 1, (uint16_t*)fs.sb);
-
+  
   // Calculate filesystem parameters
   fs.block_size = MIN_BLOCK_SIZE << fs.sb->log2block_size;
   fs.inode_size = fs.sb->inode_size;
@@ -111,6 +112,6 @@ void ext2_init(void) {
 
   fs.bgds = (bgd_t*)read_block(fs.block_size == 1024 ? 2:1);
   uint8_t* buf = NULL;
-  __read_dirname(ROOT_INODE_NUMBER, &buf);
+  __read_dirnames(ROOT_INODE_NUMBER, &buf);
   free_buf(buf);
 }
