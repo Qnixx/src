@@ -37,12 +37,23 @@ static dev_type_t verify_drive(dev_driver_t* driver_desc) {
   __builtin_unreachable();
 }
 
-void disk_read_lba(dev_driver_t* driver_desc, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
+static void __readwrite_op_lba(dev_driver_t* driver_desc, uint64_t lba, uint32_t sector_count, uint16_t* buf, uint8_t do_write) {
   dev_type_t type = verify_drive(driver_desc);
-
   switch (type) {
     case DEV_BLOCK_SATA:
-      sata_read_drive(IFACE_2_SATA_DEV(driver_desc->ifaces), lba, sector_count, buf);
+      if (!(do_write))
+        sata_read_drive(IFACE_2_SATA_DEV(driver_desc->ifaces), lba, sector_count, buf);
+      else
+        sata_write_drive(IFACE_2_SATA_DEV(driver_desc->ifaces), lba, sector_count, buf);
       break;
   }
+}
+
+void disk_read_lba(dev_driver_t* driver_desc, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
+  __readwrite_op_lba(driver_desc, lba, sector_count, buf, 0);
+}
+
+
+void disk_write_lba(dev_driver_t* driver_desc, uint64_t lba, uint32_t sector_count, uint16_t* buf) {
+  __readwrite_op_lba(driver_desc, lba, sector_count, buf, 1);
 }
