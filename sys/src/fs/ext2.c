@@ -107,12 +107,10 @@ void ext2_init(void) {
   desc.blocksize = fs.block_size;
   desc.size = fs.sb->total_blocks;
 
-  // Free superblock
-  vmm_free_page(fs.sb);
-
   // Validate filesystem
   if(fs.block_size > MAX_BLOCK_SIZE) {
     printk("[%s]: Block size %d is above %d limit.\n", fs.block_size, MAX_BLOCK_SIZE);
+    vmm_free_page(fs.sb);
     return;
   }
 
