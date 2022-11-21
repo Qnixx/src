@@ -9,6 +9,7 @@
 #define _isr __attribute__((interrupt))
 #define _noreturn __attribute__((noreturn))
 #define _naked __attribute__((naked))
+#define _aligned(n) __attribute__((aligned(n)))
 
 #define CLI_SLEEP                               \
   for (uint64_t i = 0; i < 100000000; ++i) {    \
