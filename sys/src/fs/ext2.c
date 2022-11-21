@@ -88,6 +88,12 @@ void ext2_init(void) {
   // Read superblock
   fs.sb = vmm_alloc_page();
   disk_read_lba(fs.block_driver, SUPERBLOCK_LBA, 1, (uint16_t*)fs.sb);
+
+  if (fs.sb->ext2_magic != EXT2_MAGIC) {
+    PRINTK_SERIAL("[%s]: This is not an ext2 filesystem!\n", MODULE_NAME);
+    vmm_free_page(fs.sb);
+    return;
+  }
   
   // Calculate filesystem parameters
   fs.block_size = MIN_BLOCK_SIZE << fs.sb->log2block_size;
@@ -112,6 +118,7 @@ void ext2_init(void) {
 
   fs.bgds = (bgd_t*)read_block(fs.block_size == 1024 ? 2:1);
   uint8_t* buf = NULL;
+
   __read_dirnames(ROOT_INODE_NUMBER, &buf);
   free_buf(buf);
 }

@@ -15,6 +15,8 @@
 #define SUPERBLOCK_LBA 2
 #define ROOT_INODE_NUMBER 2
 
+#define EXT2_MAGIC 0xEF53
+
 #define EXT2_S_IFSOCK   0xC000
 #define EXT2_S_IFLNK    0xA000
 #define EXT2_S_IFREG    0x8000
