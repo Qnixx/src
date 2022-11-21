@@ -6,5 +6,6 @@
 #define BIG_ENDIAN(v) ((((v) & 0xFF) << 8) | (((v) >> 8) & 0xFF))
 #define IS_POWER_OF_2(x) ((x & (x-1)) == 0)
 #define OFF_BY(off, by) (~(off % ~(by)))
+#define DIV_CEIL(a, b) (a/b + !!(a%b))
 
 #endif

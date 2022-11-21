@@ -8,7 +8,11 @@
 #define EXT2_DIRECT_BLOCKS 12
 
 
-#define SUPERBLOCK_SIZE 1024
+#define MIN_BLOCK_SIZE 1024
+#define MAX_BLOCK_SIZE 4096
+#define SECTOR_SIZE 512
+
+#define SUPERBLOCK_LBA 2
 #define ROOT_INODE_NUMBER 2
 
 #define EXT2_S_IFSOCK   0xC000
@@ -68,7 +72,6 @@ typedef struct {
   uint32_t journal_inode;
   uint32_t journal_device;
   uint32_t orphan_head;
-  char unused2[1024-236];
 } _packed superblock_t;
 
 typedef struct {
@@ -87,7 +90,7 @@ typedef struct {
   uint16_t size;
   uint8_t  name_len;
   uint8_t  type;
-  char name[];
+  char name[255];
 } _packed direntry_t;
 
 
@@ -119,15 +122,17 @@ typedef struct {
   uint32_t block;
   uint32_t times;
   uint8_t dirty;
-  char * block_data;
+  char* block_data;
 } ext2_cache_t;
 
 
 typedef struct ext2_fs {
-  dev_driver_t* device_driver;      // Driver descriptor for device.
+  dev_driver_t* block_driver;      // Driver descriptor for device.
   superblock_t* sb;
   bgd_t* bgds;
   uint32_t block_size;
+  uint32_t inode_size;
+  uint32_t sectors_per_block;
   uint32_t blocks_per_group;
   uint32_t inodes_per_group;
   uint32_t total_groups;
