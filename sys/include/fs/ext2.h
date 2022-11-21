@@ -132,6 +132,7 @@ typedef struct ext2_fs {
   dev_driver_t* block_driver;      // Driver descriptor for device.
   superblock_t* sb;
   bgd_t* bgds;
+  uint32_t bgdt_block;
   uint32_t block_size;
   uint32_t inode_size;
   uint32_t sectors_per_block;
@@ -139,6 +140,7 @@ typedef struct ext2_fs {
   uint32_t inodes_per_group;
   uint32_t total_groups;
   uint32_t bgd_blocks;
+  uint32_t bgds_per_block;
 } ext2_fs_t;
 
 void ext2_init(void);

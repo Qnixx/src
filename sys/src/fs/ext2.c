@@ -6,6 +6,7 @@
 #include <lib/panic.h>
 #include <lib/string.h>
 #include <lib/math.h>
+#include <lib/time.h>
 #include <mm/vmm.h>
 #include <mm/heap.h>
 #include <block/disk.h>
@@ -26,22 +27,40 @@ static fs_descriptor_t desc = {
 static ext2_fs_t fs;
 
 #define free_buf(buf) vmm_free_page((uint8_t*)buf)
-// #define block_group(inode) ((inode - 1) / fs.inodes_per_group)
-// #define group_index(inode) ((inode - 1) % fs.inodes_per_group)
-// #define containing_block(inode) ((group_index(inode) * sizeof(inode_t)) / fs.block_size)
+#define BGDT_START() (fs.block_size == 1024 ? 2:1)
 
 static uint8_t* read_block(uint64_t block) {
-  uint16_t* buf = (uint16_t*)vmm_alloc_page();
-  disk_read_lba(fs.block_driver, block * fs.sectors_per_block, fs.sectors_per_block, buf);
-  return (uint8_t*)buf;
+  uint8_t* buf = (uint8_t*)vmm_alloc_page();
+  disk_read_lba(fs.block_driver, block * fs.sectors_per_block, fs.sectors_per_block, (uint16_t*)buf);
+  return buf;
+}
+
+static void write_block(uint64_t block, uint8_t* buf) {
+  if (block == 0) {
+    printk(PRINTK_RED "[%s]: Block 0 write attempted.\n", MODULE_NAME);
+    return;
+  }
+
+  disk_write_lba(fs.block_driver, block * fs.sectors_per_block, fs.sectors_per_block, (uint16_t*)buf);
 }
 
 
-/*
-static void __write_block(uint64_t block, uint16_t* buf) {
-  disk_write_lba(fs.block_driver, block * fs.sectors_per_block, fs.sectors_per_block, buf);
+static bgd_t* read_bgd(unsigned int bgd_idx) {
+  int block = bgd_idx / fs.bgds_per_block;
+  if(fs.bgdt_block != block) {
+    fs.bgds = (bgd_t*)read_block(BGDT_START() + block);
+    fs.bgdt_block = block;
+  }
+
+  return &fs.bgds[bgd_idx % fs.bgds_per_block];
 }
-*/
+
+static void write_bgd(unsigned int bgd_idx, bgd_t* bgd) {
+  bgd_t* current = read_bgd(bgd_idx);
+  kmemcpy(current, bgd, sizeof(bgd_t));
+
+  write_block(BGDT_START() + fs.bgdt_block, (uint8_t*)fs.bgds);
+}
 
 
 static inode_t* read_inode(unsigned int inode_idx, uint8_t** buf) {
@@ -49,69 +68,49 @@ static inode_t* read_inode(unsigned int inode_idx, uint8_t** buf) {
     return NULL;
   }
 
-  int group = inode_idx / fs.inodes_per_group;
-  int inode_table_block = fs.bgds[group].inode_table;
-  int idx_in_group = inode_idx - group * fs.inodes_per_group;
-  int block_offset = (idx_in_group - 1) * fs.inode_size / fs.block_size;
-  int offset_in_block = (idx_in_group - 1) - block_offset * (fs.block_size / fs.inode_size);
+  int group = inode_idx / fs.sb->inodes_per_group;
+  int inode_table_block = read_bgd(group)->inode_table;
+  int idx_in_group = inode_idx - group * fs.sb->inodes_per_group;
+  int block_offset = (idx_in_group - 1) * fs.sb->inode_size / fs.block_size;
+  int offset_in_block = (idx_in_group - 1) - block_offset * (fs.block_size / fs.sb->inode_size);
 
   *buf = read_block(inode_table_block + block_offset);
-  return (inode_t*)(*buf + offset_in_block * fs.inode_size);
+  return (inode_t*)(*buf + offset_in_block * fs.sb->inode_size);
 }
-
-
-/*
-static void __write_inode(unsigned int inode_idx, inode_t* inode) {
-  int group = inode_idx / fs.inodes_per_group;
-  int inode_table_block = fs.bgds[group].inode_table;
-  int idx_in_group = inode_idx - group * fs.inodes_per_group;
-  int block_offset = (idx_in_group - 1) * fs.inode_size / fs.block_size;
-  __write_block(inode_table_block + block_offset, (uint16_t*)inode);
-}
-
-
-static void __rewrite_bgds(void) {
-  for (uint32_t i = 0; i < fs.bgd_blocks; ++i) {
-    __write_block(2, (void*)fs.bgds + i * fs.block_size);
-  }
-}
-*/
-
 
 /*
  *  Allocate an inode and 
  *  return the inode index.
  *
  */
+static uint32_t alloc_inode(void) {
+  if(!fs.sb->free_inodes) {
+    printk(PRINTK_RED "[%s] Cannot allocate inode: filesystem full\n", MODULE_NAME);
+    return 0;
+  }
 
-/*
-static uint32_t allocate_inode(void) {
-  for (size_t i = 0; i < fs.total_groups; ++i) {
-    if (fs.bgds[i].free_inodes) {
-      // Read the block that contains the inode bitmap.
-      uint32_t inode_bitmap_block = fs.bgds[i].inode_bitmap;
-      uint32_t* buf = (uint32_t*)read_block(inode_bitmap_block);
-      
-      for (uint32_t j = 0; j < fs.block_size / 4; ++j) {
-        uint32_t bitmap = buf[j];
+  for (size_t i = 0; i < fs.total_groups; i++) {
+    bgd_t* bgd = read_bgd(i);
+    if (!bgd->free_inodes) continue;
 
-        if (bitmap == ~(0)) {
-          continue;
-        }
+    // Read the block that contains the inode bitmap.
+    uint32_t* buf = (uint32_t*)read_block(bgd->inode_bitmap);
+    for (uint32_t j = 0; j < fs.block_size / 4; j++) {
+      uint32_t bitmap = buf[j];
+      if (bitmap == ~(0)) continue;
 
-        for (uint32_t k = 0; k < 32; ++k) {
-          uint8_t free = !((bitmap >> k) & 1);
+      for (uint32_t k = 0; k < 32; k++) {
+        uint8_t free = !((bitmap >> k) & 1);
+        if (!free) continue;
 
-          if (free) {
-            buf[i] |= (1 << k);
-            __write_block(inode_bitmap_block, (void*)buf);
-            
-            // Decrement free inode count.
-            --fs.bgds[i].free_inodes;
-            __rewrite_bgds();
-            return i * fs.inodes_per_group + j * 32 + k;
-          }
-        }
+        buf[j] |= (1 << k);
+        write_block(bgd->inode_bitmap, (uint8_t*)buf);
+
+        // Decrement free inode counts.
+        bgd->free_inodes--;
+        fs.sb->free_inodes--;
+        write_bgd(i, bgd);
+        return i * fs.sb->inodes_per_group + j * 32 + k;
       }
     }
   }
@@ -120,49 +119,66 @@ static uint32_t allocate_inode(void) {
   return (uint32_t)~(0);
 }
 
-
+/*
+ *  Allocate a block and 
+ *  return the block index.
+ *
+ */
 static uint32_t alloc_block(void) {
-  for (uint32_t i = 0; i < fs.total_groups; ++i) {
-    if (fs.bgds[i].free_blocks) {
-      uint32_t bitmap_block = fs.bgds[i].block_bitmap;
-      uint32_t* buf = (uint32_t*)read_block(bitmap_block);
-      for (uint32_t j = 0; j < fs.block_size/4; ++j) {
-        uint32_t bitmap = buf[j];
+  if(!fs.sb->free_inodes) {
+    printk(PRINTK_RED "[%s] Cannot allocate block: filesystem full\n", MODULE_NAME);
+    return 0;
+  }
 
-        if (bitmap == ~(0)) {
-          continue;
-        }
+  for (uint32_t i = 0; i < fs.total_groups; i++) {
+    bgd_t* bgd = read_bgd(i);
+    if (!bgd->free_blocks) continue;
 
-        for (uint32_t k = 0; k < 32; ++j) {
-          buf[j] |= (1 << k);
-          __write_block(bitmap_block, (void*)buf);
+    // Read the block that contains the block bitmap.
+    uint32_t* buf = (uint32_t*)read_block(bgd->block_bitmap);
+    for (uint32_t j = 0; j < fs.block_size / 4; j++) {
+      uint32_t bitmap = buf[j];
+      if (bitmap == ~(0)) continue;
 
-          --fs.bgds[i].free_blocks;
-          __rewrite_bgds();
-          return i * fs.blocks_per_group + j * 32 + k;
-        }
+      for (uint32_t k = 0; k < 32; k++) {
+        uint8_t free = !((bitmap >> k) & 1);
+        if (!free) continue;
+
+        buf[j] |= (1 << k);
+        write_block(bgd->block_bitmap, (uint8_t*)buf);
+
+        // Decrement free block counts.
+        bgd->free_blocks--;
+        fs.sb->free_blocks--;
+        write_bgd(i, bgd);
+        return i * fs.sb->blocks_per_group + j * 32 + k;
       }
     }
   }
 
+  // No more blocks!
   return (uint32_t)~(0);
 }
-*/
 
-// Subject to removal or change.
-static void __read_dirnames(unsigned int inode_idx, uint8_t** buf) {
-  inode_t* inode = read_inode(inode_idx, buf);
-  direntry_t* orig_direntry = (direntry_t*)read_block(inode->blocks[0]);
-  direntry_t* direntry = orig_direntry;
+
+static void read_dirnames(unsigned int inode_idx) {
+  uint8_t* inode_buf;
+  inode_t* inode = read_inode(inode_idx, &inode_buf);
+  uint8_t* data_buf = read_block(inode->blocks[0]);
+  direntry_t* direntry = (direntry_t*)data_buf;
 
   while (direntry->name[0]) {
-    printk("[%s]: Found file => %s\n", MODULE_NAME, direntry->name);
+    uint32_t time = inode->mtime;
+
+    // TODO: Alignment, proper uid/gid names, and permissions
+    printk("%d %d %d %d %s %d %d:%d %s\n", inode->hard_links, inode->userid, inode->gid, inode->size, month_names[GET_MONTH(time)], GET_DAY(time), GET_HOUR(time), GET_MINUTE(time), direntry->name);
+
     direntry = (direntry_t*)((uint8_t*)direntry + direntry->rec_length);
   }
 
-  free_buf(orig_direntry);
+  free_buf(data_buf);
+  free_buf(inode_buf);
 }
-
 
 
 void ext2_init(void) {
@@ -182,32 +198,25 @@ void ext2_init(void) {
     vmm_free_page(fs.sb);
     return;
   }
-  
+
   // Calculate filesystem parameters
+  fs.bgdt_block = (uint32_t)~(0);
   fs.block_size = MIN_BLOCK_SIZE << fs.sb->log2block_size;
-  fs.inode_size = fs.sb->inode_size;
   fs.sectors_per_block = DIV_CEIL(fs.block_size, SECTOR_SIZE);
-  fs.blocks_per_group = fs.sb->blocks_per_group;
-  fs.inodes_per_group = fs.sb->inodes_per_group;
   fs.total_groups = DIV_CEIL(fs.sb->total_blocks, fs.sb->blocks_per_group);
   fs.bgd_blocks = DIV_CEIL(fs.total_groups * sizeof(bgd_t), fs.block_size);
+  fs.bgds_per_block = fs.block_size / sizeof(bgd_t);
 
   desc.blocksize = fs.block_size;
   desc.size = fs.sb->total_blocks;
 
   // Validate filesystem
   if(fs.block_size > MAX_BLOCK_SIZE) {
-    printk("[%s]: Block size %d is above %d limit.\n", fs.block_size, MAX_BLOCK_SIZE);
+    printk("[%s]: Block size %d is above %d limit.\n", MODULE_NAME, fs.block_size, MAX_BLOCK_SIZE);
     vmm_free_page(fs.sb);
     return;
   }
 
-  fs.bgds = (bgd_t*)read_block(fs.block_size == 1024 ? 2:1);
-  uint8_t* buf = NULL;
-  
-  // rename_root("lost+found", "bruh");
-  
-  __read_dirnames(ROOT_INODE_NUMBER, &buf);
-
-  free_buf(buf);
+  // Test
+  read_dirnames(ROOT_INODE_NUMBER);
 }

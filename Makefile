@@ -1,5 +1,6 @@
 LOCAL_IP = 192.168.1.152
-INSTALL_DIR = /media/kai/6402-F321
+INSTALL_DIR = /media/kai/6402-F3211
+QEMU_ARGS = -cpu qemu64 -M q35 -m 3G -cdrom Qnixx.iso -boot d -smp 4 -rtc base=localtime -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0 -serial stdio -drive id=disk,format=raw,file=sbin/diskimg.img,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0,serial=111111111111111111111
 CFILES = $(shell find sys/src/ -name "*.c")
 CFLAGS = -fexceptions -std=gnu11 -ffreestanding -fno-stack-protector \
   -fno-pic -Werror=implicit -Werror=implicit-function-declaration -Werror=implicit-int \
@@ -73,21 +74,19 @@ TauLang:
 	@cd TauLang; make; make install_linux
 
 sbin/diskimg.img:
-	@echo "Creating disk image.."
-	@qemu-img create sbin/diskimg.img 1G
+	@echo "Creating filesystem image.."
+	@dd if=/dev/zero of=sbin/diskimg.img bs=1M count=512
 	@echo "Creating ext2 filesystem on disk image.."
-	@mkfs.ext2 sbin/diskimg.img
-	@#dd if=/dev/zero of=sbin/diskimg.img bs=1024 count=512
-	@#mke2fs sbin/diskimg.img
+	@mke2fs sbin/diskimg.img
 
 .PHONY:
 romfs:
 	mkdir -p meta/system/raw/
 	mv meta/system/raw/ ./; cd raw; tar -cvf ../meta/system/romfs.sys *; cd ../; mv raw meta/system/
 
-.PHONY: debug_kvm
-debug_kvm:
-	qemu-system-x86_64 --enable-kvm -cpu qemu64 -M q35 -m 3G -drive file=Qnixx.iso,format=raw -boot d -monitor stdio -smp 4 -rtc base=localtime -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0 -device rtl8139
+.PHONY: debug
+debug: sbin/diskimg.img
+	@qemu-system-x86_64 --enable-kvm $(QEMU_ARGS)
 
 .PHONY:
 run: sbin/diskimg.img
@@ -96,7 +95,7 @@ run: sbin/diskimg.img
 	@sudo ip address add $(LOCAL_IP) dev tap0
 	@sudo ip link set dev tap0 up
 	@echo "Running..."
-	@qemu-system-x86_64 --enable-kvm -cpu qemu64 -M q35 -m 3G -cdrom Qnixx.iso -boot d -smp 4 -rtc base=localtime -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0 -serial stdio -netdev tap,id=br0,ifname=tap0,script=no,downscript=no -device rtl8139,netdev=br0,mac=52:55:00:d1:55:01 -drive id=disk,file=sbin/diskimg.img,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0,serial=111111111111111111111
+	@qemu-system-x86_64 --enable-kvm $(QEMU_ARGS) -netdev tap,id=br0,ifname=tap0,script=no,downscript=no -device rtl8139,netdev=br0,mac=52:55:00:d1:55:01
 	@echo "Removing tap..."
 	@sudo ip tuntap del dev tap0 mode tap
 
