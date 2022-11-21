@@ -74,11 +74,11 @@ TauLang:
 
 sbin/diskimg.img:
 	@echo "Creating disk image.."
-	@qemu-img create sbin/diskimg.img 1M
-	@#echo "Creating ext2 filesystem on disk image.."
-	@# mkfs.ext2 sbin/diskimg.img
-	@dd if=/dev/zero of=sbin/diskimg.img bs=1024 count=512
-	@mke2fs sbin/diskimg.img
+	@qemu-img create sbin/diskimg.img 1G
+	@echo "Creating ext2 filesystem on disk image.."
+	@mkfs.ext2 sbin/diskimg.img
+	@#dd if=/dev/zero of=sbin/diskimg.img bs=1024 count=512
+	@#mke2fs sbin/diskimg.img
 
 .PHONY:
 romfs:
