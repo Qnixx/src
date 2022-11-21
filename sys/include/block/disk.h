@@ -6,6 +6,6 @@
 
 
 void disk_read_lba(dev_driver_t* driver_desc, uint64_t lba, uint32_t sector_count, uint16_t* buf);
-void write_read_lba(dev_driver_t* driver_desc, uint64_t lba, uint32_t sector_count, uint16_t* buf);
+void disk_write_lba(dev_driver_t* driver_desc, uint64_t lba, uint32_t sector_count, uint16_t* buf);
 
 #endif

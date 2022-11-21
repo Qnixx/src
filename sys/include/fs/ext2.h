@@ -89,11 +89,11 @@ typedef struct {
 
 typedef struct {
   uint32_t inode;
-  uint16_t size;
+  uint16_t rec_length;
   uint8_t  name_len;
   uint8_t  type;
   char name[255];
-} _packed direntry_t;
+} direntry_t;
 
 
 typedef struct {
@@ -118,7 +118,7 @@ typedef struct {
   };
   uint32_t f_block_addr;
   char os_specific2[12];
-} _packed inode_t;
+} inode_t;
 
 typedef struct {
   uint32_t block;

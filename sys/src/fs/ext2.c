@@ -5,6 +5,7 @@
 #include <lib/module.h>
 #include <lib/panic.h>
 #include <lib/string.h>
+#include <lib/math.h>
 #include <mm/vmm.h>
 #include <mm/heap.h>
 #include <block/disk.h>
@@ -29,14 +30,21 @@ static ext2_fs_t fs;
 // #define group_index(inode) ((inode - 1) % fs.inodes_per_group)
 // #define containing_block(inode) ((group_index(inode) * sizeof(inode_t)) / fs.block_size)
 
-uint8_t* read_block(uint64_t block) {
+static uint8_t* read_block(uint64_t block) {
   uint16_t* buf = (uint16_t*)vmm_alloc_page();
   disk_read_lba(fs.block_driver, block * fs.sectors_per_block, fs.sectors_per_block, buf);
   return (uint8_t*)buf;
 }
 
 
-static inode_t* __read_inode(unsigned int inode_idx, uint8_t** buf) {
+/*
+static void __write_block(uint64_t block, uint16_t* buf) {
+  disk_write_lba(fs.block_driver, block * fs.sectors_per_block, fs.sectors_per_block, buf);
+}
+*/
+
+
+static inode_t* read_inode(unsigned int inode_idx, uint8_t** buf) {
   if (inode_idx == 0) {
     return NULL;
   }
@@ -52,27 +60,107 @@ static inode_t* __read_inode(unsigned int inode_idx, uint8_t** buf) {
 }
 
 
+/*
+static void __write_inode(unsigned int inode_idx, inode_t* inode) {
+  int group = inode_idx / fs.inodes_per_group;
+  int inode_table_block = fs.bgds[group].inode_table;
+  int idx_in_group = inode_idx - group * fs.inodes_per_group;
+  int block_offset = (idx_in_group - 1) * fs.inode_size / fs.block_size;
+  __write_block(inode_table_block + block_offset, (uint16_t*)inode);
+}
 
+
+static void __rewrite_bgds(void) {
+  for (uint32_t i = 0; i < fs.bgd_blocks; ++i) {
+    __write_block(2, (void*)fs.bgds + i * fs.block_size);
+  }
+}
+*/
+
+
+/*
+ *  Allocate an inode and 
+ *  return the inode index.
+ *
+ */
+
+/*
+static uint32_t allocate_inode(void) {
+  for (size_t i = 0; i < fs.total_groups; ++i) {
+    if (fs.bgds[i].free_inodes) {
+      // Read the block that contains the inode bitmap.
+      uint32_t inode_bitmap_block = fs.bgds[i].inode_bitmap;
+      uint32_t* buf = (uint32_t*)read_block(inode_bitmap_block);
+      
+      for (uint32_t j = 0; j < fs.block_size / 4; ++j) {
+        uint32_t bitmap = buf[j];
+
+        if (bitmap == ~(0)) {
+          continue;
+        }
+
+        for (uint32_t k = 0; k < 32; ++k) {
+          uint8_t free = !((bitmap >> k) & 1);
+
+          if (free) {
+            buf[i] |= (1 << k);
+            __write_block(inode_bitmap_block, (void*)buf);
+            
+            // Decrement free inode count.
+            --fs.bgds[i].free_inodes;
+            __rewrite_bgds();
+            return i * fs.inodes_per_group + j * 32 + k;
+          }
+        }
+      }
+    }
+  }
+  
+  // No more inodes!
+  return (uint32_t)~(0);
+}
+
+
+static uint32_t alloc_block(void) {
+  for (uint32_t i = 0; i < fs.total_groups; ++i) {
+    if (fs.bgds[i].free_blocks) {
+      uint32_t bitmap_block = fs.bgds[i].block_bitmap;
+      uint32_t* buf = (uint32_t*)read_block(bitmap_block);
+      for (uint32_t j = 0; j < fs.block_size/4; ++j) {
+        uint32_t bitmap = buf[j];
+
+        if (bitmap == ~(0)) {
+          continue;
+        }
+
+        for (uint32_t k = 0; k < 32; ++j) {
+          buf[j] |= (1 << k);
+          __write_block(bitmap_block, (void*)buf);
+
+          --fs.bgds[i].free_blocks;
+          __rewrite_bgds();
+          return i * fs.blocks_per_group + j * 32 + k;
+        }
+      }
+    }
+  }
+
+  return (uint32_t)~(0);
+}
+*/
+
+// Subject to removal or change.
 static void __read_dirnames(unsigned int inode_idx, uint8_t** buf) {
-  inode_t* inode = __read_inode(inode_idx, buf);
-  if (inode == NULL) {
-    return;
-  }
-  
-  char* orig_filename = kmalloc(sizeof(char*) * 256);
-  char* filename = orig_filename;
-  kmemzero(filename, sizeof(256));
+  inode_t* inode = read_inode(inode_idx, buf);
+  direntry_t* orig_direntry = (direntry_t*)read_block(inode->blocks[0]);
+  direntry_t* direntry = orig_direntry;
 
-  uint8_t* block = (uint8_t*)read_block(inode->blocks[0]);
-  direntry_t* direntry = (direntry_t*)block;
-  kmemcpy(filename, direntry->name, sizeof(direntry->name));
-  
-  while (*filename) {
-    printk("Found file:  %s\n", filename);
-    filename += direntry->size;
+  while (direntry->name[0]) {
+    printk("[%s]: Found file => %s\n", MODULE_NAME, direntry->name);
+    direntry = (direntry_t*)((uint8_t*)direntry + direntry->rec_length);
   }
-  
-  kfree(orig_filename);
+
+  free_buf(orig_direntry);
 }
 
 
@@ -116,7 +204,10 @@ void ext2_init(void) {
 
   fs.bgds = (bgd_t*)read_block(fs.block_size == 1024 ? 2:1);
   uint8_t* buf = NULL;
-
+  
+  // rename_root("lost+found", "bruh");
+  
   __read_dirnames(ROOT_INODE_NUMBER, &buf);
+
   free_buf(buf);
 }
