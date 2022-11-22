@@ -110,6 +110,7 @@ static uint32_t alloc_inode(void) {
         bgd->free_inodes--;
         fs.sb->free_inodes--;
         write_bgd(i, bgd);
+        disk_write_lba(fs.block_driver, SUPERBLOCK_LBA, 1, (uint16_t*)fs.sb);
         return i * fs.sb->inodes_per_group + j * 32 + k;
       }
     }
@@ -151,6 +152,7 @@ static uint32_t alloc_block(void) {
         bgd->free_blocks--;
         fs.sb->free_blocks--;
         write_bgd(i, bgd);
+        disk_write_lba(fs.block_driver, SUPERBLOCK_LBA, 1, (uint16_t*)fs.sb);
         return i * fs.sb->blocks_per_group + j * 32 + k;
       }
     }
