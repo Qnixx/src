@@ -1,122 +1,30 @@
-override KERNEL := Qnixx.elf
- 
-# Convenience macro to reliably declare overridable command variables.
-define DEFAULT_VAR =
-    ifeq ($(origin $1),default)
-        override $(1) := $(2)
-    endif
-    ifeq ($(origin $1),undefined)
-        override $(1) := $(2)
-    endif
-endef
- 
-TARGET := linux-gnu
-CC := aarch64-$(TARGET)-gcc
-LD := aarch64-$(TARGET)-ld
+CFLAGS = -Ignu-efi/inc -Isrc/ -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c
+LDFLAGS = $ -shared -Bsymbolic -Lgnu-efi/x86_64/lib -Lgnu-efi/x86_64/gnuefi -Tgnu-efi/gnuefi/elf_x86_64_efi.lds gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o
+CC = gcc
+CFILES = $(shell find src/ -name "*.c")
 
 
-# User controllable CFLAGS.
-CFLAGS ?= -g -O2 -pipe -Wall -Wextra
- 
-# User controllable preprocessor flags. We set none by default.
-CPPFLAGS ?=
- 
-# User controllable nasm flags.
-NASMFLAGS ?= -F dwarf -g
- 
-# User controllable linker flags. We set none by default.
-LDFLAGS ?=
- 
-# Internal C flags that should not be changed by the user.
-override CFLAGS +=       \
-    -std=c11             \
-    -ffreestanding       \
-    -fno-stack-protector \
-    -fno-stack-check     \
-    -fno-lto             \
-    -fno-pie             \
-    -fno-pic             \
-    -mgeneral-regs-only  \
-    -MMD                 \
-    -Isys/include/lib       \
-    -Isys/include
- 
-# Internal linker flags that should not be changed by the user.
-override LDFLAGS +=         \
-    -nostdlib               \
-    -static                 \
-    -m aarch64elf           \
-    -z max-page-size=0x1000 \
-    -T sys/src/linker.ld
- 
-# Check if the linker supports -no-pie and enable it if it does.
-ifeq ($(shell $(LD) --help 2>&1 | grep 'no-pie' >/dev/null 2>&1; echo $$?),0)
-    override LDFLAGS += -no-pie
-endif
- 
-# Internal nasm flags that should not be changed by the user.
-override NASMFLAGS += \
-    -f elf64
- 
-# Use find to glob all *.c, *.S, and *.asm files in the directory and extract the object names.
-override CFILES := $(shell find sys/src -type f -name '*.c')
-override ASFILES := $(shell find sys/src -type f -name '*.S')
-override NASMFILES := $(shell find sys/src -type f -name '*.asm')
-override OBJ := $(CFILES:.c=.o) $(ASFILES:.S=.o) $(NASMFILES:.asm=.o)
-override HEADER_DEPS := $(CFILES:.c=.d) $(ASFILES:.S=.d)
- 
-# Default target.
 .PHONY: all
-all: clean $(KERNEL) makeiso
-	make clean
- 
-# Link rules for the final kernel executable.
-$(KERNEL): $(OBJ)
-	$(LD) $(OBJ) $(LDFLAGS) -o $@
- 
-# Include header dependencies.
--include $(HEADER_DEPS)
- 
-# Compilation rules for *.c files.
-%.o: %.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
- 
-# Compilation rules for *.S files.
-%.o: %.S
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
- 
-# Compilation rules for *.asm (nasm) files.
-%.o: %.asm
-	nasm $(NASMFLAGS) $< -o $@
- 
-# Remove object files and the final executable.
-.PHONY: clean
-clean:
-	rm -rf $(KERNEL) $(OBJ) $(HEADER_DEPS) firmware/
+all: gnu-efi cfiles
+	ld $(LDFLAGS) *.o -o main.so -lgnuefi -lefi
+	objcopy -j .text -j .sdata -j .data -j .dynamic -j .dynsym  -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 main.so BOOTX64.EFI
+	rm *.o *.so
+	mkdir -p mnt
 
-makeiso:
-	bash ./get-iso.sh
+.PHONY: test
+run:	
+	dd if=/dev/zero of=Qnixx.img bs=512 count=93750
+	mformat -i Qnixx.img
+	mmd -i Qnixx.img ::/EFI
+	mmd -i Qnixx.img ::/EFI/BOOT
+	mcopy -i Qnixx.img BOOTX64.EFI ::/EFI/BOOT
+	mcopy -i Qnixx.img startup.nsh ::
+	qemu-system-x86_64 -drive file=Qnixx.img -m 256M -cpu qemu64 -drive if=pflash,format=raw,unit=0,file="OVMFbin/OVMF_CODE-pure-efi.fd",readonly=on -drive if=pflash,format=raw,unit=1,file="OVMFbin/OVMF_VARS-pure-efi.fd" -net none -monitor stdio -d int -no-reboot -D logfile.txt -M smm=off
 
+.PHONY: files
+cfiles: $(CFILES)
+	$(CC) $(CFLAGS) $^
 
-MACHINE := virt
-ARGS	:= -cpu cortex-a72          \
-            -m 512m                 \
-            -bios firmware/OVMF.fd  \
-            -monitor stdio          \
-            -device ramfb           \
-            -device qemu-xhci       \
-            -device usb-kbd         \
-            -d int                  \
-
-run: clean-objs ovmf-firmware qemu
-
-clean-objs:
-	rm -rf $(KERNEL) $(OBJ) $(HEADER_DEPS) limine/ bin/ obj/
-
-ovmf-firmware:
-	mkdir -p firmware
-	cd firmware && curl -o OVMF-AA64.zip https://efi.akeo.ie/OVMF/OVMF-AA64.zip && unzip OVMF-AA64.zip
-	rm firmware/readme.txt &&	rm firmware/OVMF-AA64.zip
-
-qemu:
-	qemu-system-aarch64 -M $(MACHINE) $(ARGS) -cdrom Qnixx.iso
+gnu-efi:
+	git clone https://git.code.sf.net/p/gnu-efi/code gnu-efi
+	cd gnu-efi; make
