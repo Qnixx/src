@@ -129,54 +129,7 @@ static VOID GetMemoryMap(VOID) {
 
 
 __attribute__((noreturn)) static VOID LoadKernel(EFI_HANDLE ImageHandle) {
-  const UINT8* const ORIG_ELF_PTR = LoadFile(KERNEL_PATH, ImageHandle);
-  const UINT8* Ptr = ORIG_ELF_PTR;
-
-  if (Ptr == NULL) {
-    Print(L"!!Could not open \"%s\"!!\n", KERNEL_PATH);
-    asm volatile("cli; hlt");
-  }
-
-  Elf64_Ehdr Eh;
-  for (uint64_t i = 0; i < sizeof(Eh); ++i) {
-    ((char*)&Eh)[i] = Ptr[i];
-  }
-  
-  CheckELF(Eh);
-
-  uint64_t PhdrsSize = Eh.e_phnum*Eh.e_phentsize;
-  Elf64_Phdr* Phdrs = AllocatePool(PhdrsSize);
-
-  Ptr = Ptr + Eh.e_phoff;
-  for (uint64_t i = 0; i < PhdrsSize; ++i) {
-    ((char*)Phdrs)[i] = Ptr[i];
-  }
-
-  for (Elf64_Phdr* Phdr = Phdrs; (char*)Phdr < (char*)Phdrs + Eh.e_phnum * Eh.e_phentsize; Phdr = (Elf64_Phdr*)((char*)Phdr + Eh.e_phentsize)) {
-    if (Phdr->p_type == PT_LOAD) {
-      UINTN PageCount = (Phdr->p_memsz+0x1000-1);
-      Elf64_Addr Segment = Phdr->p_paddr;
-
-      BS->AllocatePages(AllocateAddress, EfiLoaderData, PageCount, &Segment);
-      Ptr = ORIG_ELF_PTR + Phdr->p_offset;
-
-      for (uint64_t i = 0; i < Phdr->p_filesz; ++i) {
-        ((char*)Segment)[i] = Ptr[i];
-      }
-    }
-  }
-
-  Print(L"Bruh moment\n");
-   
-  
-  // uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
-  // GetMemoryMap();
-  // BS->ExitBootServices(ImageHandle, EfiMapKey);
-  
   while (1);
-  void(*entry)(void) = ((__attribute__((sysv_abi))void(*)(void))Eh.e_entry);
-  entry();
-  __builtin_unreachable();
 }
 
 
