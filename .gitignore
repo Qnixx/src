@@ -8,3 +8,4 @@ dump.dat
 *.img
 *.a
 *.EFI
+limine/
