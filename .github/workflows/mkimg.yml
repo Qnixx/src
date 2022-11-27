@@ -1,0 +1,28 @@
+name: mkimg
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+   job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install gcc
+          sudo apt-get -y install make
+          sudo apt-get -y install git
+          sudo apt-get -y install nasm
+          sudo apt-get -y install xorriso
+          make toolchain
+          make
+      - name: Uploading ISO as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Qnixx
+          path: Qnixx.iso

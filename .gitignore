@@ -1,0 +1,10 @@
+*.o
+*.iso
+limine/
+*.sys
+buildcc/
+cross/
+TauLang
+dump.dat
+*.img
+*.a
