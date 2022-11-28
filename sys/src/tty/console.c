@@ -49,6 +49,15 @@ void vprintk(const char* fmt, ...) {
         case 'd':
           putstr(dec2str(va_arg(ap, size_t)), color);
           break;
+        case 'x':
+          putstr(hex2str(va_arg(ap, size_t)), color);
+          break;
+        case 'X':
+          putstr(hex2str(va_arg(ap, size_t)) + 2, color);
+          break;
+        case 's':
+          putstr(va_arg(ap, char*), color);
+          break;
       }
     } else {
       putstr((char[2]){*ptr, 0}, color);

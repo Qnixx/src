@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <lib/types.h>
+#include <lib/log.h>
 
 
 // Video printk.
