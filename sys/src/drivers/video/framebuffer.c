@@ -52,6 +52,18 @@ uint32_t* framebuffer_get_address(void) {
   return (uint32_t*)framebuffer->address;
 }
 
+uint64_t framebuffer_get_width(void) {
+  return framebuffer->height;
+}
+
+uint64_t framebuffer_get_height(void) {
+  return framebuffer->height;
+}
+
+uint64_t framebuffer_get_pitch(void) {
+  return framebuffer->pitch;
+}
+
 void framebuffer_init(void) {
   framebuffer = framebuf_req.response->framebuffers[0];
 }
