@@ -1,6 +1,6 @@
 *.o
 *.iso
-*.sys
+sys/kernel.sys
 buildcc/
 cross/
 dump.dat
