@@ -24,9 +24,8 @@ static void putstr(const char* str, uint64_t color) {
     }
 
     framebuffer_putch(x, y, str[i], EXTRACT_BG(color), EXTRACT_FG(color));
+    x += FONT_WIDTH;
   }
-
-  x += FONT_WIDTH;
 }
 
 
