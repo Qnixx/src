@@ -67,16 +67,17 @@ debug: sbin/diskimg.img
 debug1: sbin/diskimg.img
 	@qemu-system-x86_64 $(QEMU_ARGS) -monitor stdio -d int
 
+#-netdev tap,id=br0,ifname=tap0,script=no,downscript=no -device rtl8139,netdev=br0,mac=52:55:00:d1:55:01
 .PHONY:
 run: sbin/diskimg.img
-	@echo "Creating tap..."
-	@sudo ip tuntap add dev tap0 mode tap user $(shell id -u)
-	@sudo ip address add $(LOCAL_IP) dev tap0
-	@sudo ip link set dev tap0 up
+	@#echo "Creating tap..."
+	@#sudo ip tuntap add dev tap0 mode tap user $(shell id -u)
+	@#sudo ip address add $(LOCAL_IP) dev tap0
+	@#sudo ip link set dev tap0 up
 	@echo "Running..."
-	@qemu-system-x86_64 --enable-kvm $(QEMU_ARGS) -serial stdio -netdev tap,id=br0,ifname=tap0,script=no,downscript=no -device rtl8139,netdev=br0,mac=52:55:00:d1:55:01
-	@echo "Removing tap..."
-	@sudo ip tuntap del dev tap0 mode tap
+	@qemu-system-x86_64 --enable-kvm $(QEMU_ARGS) -serial stdio
+	@#echo "Removing tap..."
+	@#sudo ip tuntap del dev tap0 mode tap
 
 .PHONY: toolchain
 toolchain:
