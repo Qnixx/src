@@ -62,6 +62,11 @@ sbin/diskimg.img:
 debug: sbin/diskimg.img
 	@qemu-system-x86_64 --enable-kvm $(QEMU_ARGS) -monitor stdio
 
+
+.PHONY: debug
+debug1: sbin/diskimg.img
+	@qemu-system-x86_64 $(QEMU_ARGS) -monitor stdio -d int
+
 .PHONY:
 run: sbin/diskimg.img
 	@echo "Creating tap..."
