@@ -2,6 +2,7 @@
 #include <drivers/video/framebuffer.h>
 #include <lib/module.h>
 #include <arch/x64/idt.h>
+#include <tty/console.h>
 
 MODULE_NAME("kmain");
 MODULE_DESCRIPTION("Kernel startup module");
@@ -11,5 +12,7 @@ MODULE_LICENSE("BSD 3-Clause");
 
 __attribute__((noreturn)) void _start(void) {
   load_idt();
+  framebuffer_init();
+  vprintk("Bruh\n");
   while (1);
 }
