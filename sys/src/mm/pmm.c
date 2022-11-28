@@ -99,7 +99,7 @@ static void init_bitmap(void) {
   }
 }
 
-uintptr_t pmm_alloc_frame(void) {
+uintptr_t pmm_alloc(void) {
   for (size_t bit = 0; bit < get_bitmap_size()*8; ++bit) {
     if (!(bitmap_test(bit))) {
       bitmap_set_bit(bit);
