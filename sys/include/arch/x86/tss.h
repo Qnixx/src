@@ -49,7 +49,6 @@ typedef struct {
 } tss_desc_t;
 
 
-void write_tss(void);
-void load_tss(void);
+void tss_init(void);
 
 #endif

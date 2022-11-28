@@ -35,7 +35,7 @@ all: cfiles asmfiles link limine cleanup
 .PHONY: link
 link:
 	@echo "Linking object files..."
-	@#mv $(shell find sys/src/ -name "*.o") ./
+	@mv $(shell find sys/src/ -name "*.o") ./
 	@$(LD) *.o -nostdlib -zmax-page-size=0x1000 -static -Tsys/link.ld -o sys/kernel.sys
 
 .PHONY: cfiles
