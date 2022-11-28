@@ -18,7 +18,7 @@ __attribute__((noreturn)) void _start(void) {
   framebuffer_init();
   init_exceptions();
 
-  vprintk("Welcome to Qnixx!\n");
+  vnprintk("Welcome to Qnixx!\n", 0);
 
   while (1);
 }
