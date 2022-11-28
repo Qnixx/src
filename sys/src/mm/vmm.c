@@ -3,6 +3,12 @@
 #include <lib/asm.h>
 #include <lib/assert.h>
 
+MODULE_NAME("vmm");
+MODULE_DESCRIPTION("Virtual memory manager");
+MODULE_AUTHOR("Ian Marco Moffett");
+MODULE_LICENSE("BSD 3-Clause");
+
+
 volatile struct limine_hhdm_request hhdm_request = {
   .id = LIMINE_HHDM_REQUEST,
   .revision = 0
