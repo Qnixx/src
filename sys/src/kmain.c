@@ -18,7 +18,5 @@ __attribute__((noreturn)) void _start(void) {
   framebuffer_init();
   init_exceptions();
 
-  int a = 0 / 0;
-
   while (1);
 }
