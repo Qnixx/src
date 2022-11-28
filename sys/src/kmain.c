@@ -6,6 +6,7 @@
 #include <drivers/video/framebuffer.h>
 #include <arch/x64/idt.h>
 #include <arch/x86/exceptions.h>
+#include <arch/x86/gdt.h>
 
 MODULE_NAME("kmain");
 MODULE_DESCRIPTION("Kernel startup module");
@@ -17,6 +18,7 @@ __attribute__((noreturn)) void _start(void) {
   load_idt();
   framebuffer_init();
   init_exceptions();
+  load_gdt();
 
   vnprintk("Welcome to Qnixx!\n", 0);
 
