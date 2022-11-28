@@ -5,6 +5,7 @@
 #include <tty/console.h>
 #include <drivers/video/framebuffer.h>
 #include <arch/x64/idt.h>
+#include <arch/x86/exceptions.h>
 
 MODULE_NAME("kmain");
 MODULE_DESCRIPTION("Kernel startup module");
@@ -15,6 +16,9 @@ MODULE_LICENSE("BSD 3-Clause");
 __attribute__((noreturn)) void _start(void) {
   load_idt();
   framebuffer_init();
+  init_exceptions();
+
+  int a = 0 / 0;
 
   while (1);
 }

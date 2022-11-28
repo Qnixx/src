@@ -27,5 +27,6 @@ typedef struct {
 
 
 void load_idt(void);
+void register_exception_handler(uint8_t vector, void* isr);
 
 #endif
