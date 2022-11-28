@@ -5,7 +5,9 @@
 
 static tss_entry_t* tss;
 
-void write_tss(void) {
+extern void load_tss(void);
+
+void tss_init(void) {
   extern tss_desc_t* gdt_tss;
 
   tss = kmalloc(sizeof(tss_entry_t));
@@ -30,4 +32,6 @@ void write_tss(void) {
   gdt_tss->reserved = 0;
   gdt_tss->type = 0x9;
   gdt_tss->zero = 0;
+
+  load_tss();
 }

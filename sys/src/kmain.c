@@ -6,6 +6,7 @@
 #include <arch/x64/idt.h>
 #include <arch/x86/exceptions.h>
 #include <arch/x86/gdt.h>
+#include <arch/x86/tss.h>
 #include <mm/pmm.h>
 #include <mm/heap.h>
 
@@ -34,6 +35,7 @@ __attribute__((noreturn)) void _start(void) {
   vprintk("   ____\n  6MMMMb            68b\n 8P    Y8           Y89\n6M      Mb ___  __  ___ ____   ___ ____   ___\nMM      MM `MM 6MMb `MM `MM(   )P' `MM(   )P'\nMM      MM  MMM9 `Mb MM  `MM` ,P    `MM` ,P\nMM      MM  MM'   MM MM   `MM,P      `MM,P\nMM      MM  MM    MM MM    `MM.       `MM.\nYM      M9  MM    MM MM    d`MM.      d`MM.\n 8b    d8   MM    MM MM   d' `MM.    d' `MM.\n  YMMMM9   _MM_  _MM_MM__d_  _)MM_ _d_  _)MM_\n    MM\n    YM.\n     `Mo\n\n");
 
   init_mm();
+  tss_init();
 
   while (1);
 }
