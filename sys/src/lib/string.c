@@ -62,6 +62,32 @@ void kmemcpy(void* dst, const void* src, size_t len) {
     );
 }
 
+void kmemcpy16(void* dst, const void* src, size_t len) {
+    asm(
+        "cld\n"
+        "rep\n"
+        "movsw\n"
+        ::"c"(len), "S"(src), "D"(dst)
+    );
+}
+
+void kmemcpy32(void* dst, const void* src, size_t len) {
+    asm(
+        "cld\n"
+        "rep\n"
+        "movsl\n"
+        ::"c"(len), "S"(src), "D"(dst)
+    );
+}
+
+void kmemcpy64(void* dst, const void* src, size_t len) {
+    asm(
+        "cld\n"
+        "rep\n"
+        "movsq\n"
+        ::"c"(len), "S"(src), "D"(dst)
+    );
+}
 
 
 uint8_t* hex2str(uint64_t hex_num) {

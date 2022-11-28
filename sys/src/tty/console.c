@@ -6,7 +6,7 @@
 #define MAKE_FG_BG(fg, bg) ((uint64_t)fg << 32 | bg)
 #define EXTRACT_FG(color) ((uint64_t)color >> 32)
 #define EXTRACT_BG(color) (color & 0xFFFFFFFF)
-#define SCROLL_STEP 5
+#define LINE_SPACING 4
 
 static uint32_t x = 0, y = 0;
 
@@ -17,7 +17,7 @@ static void newline(void) {
     framebuffer_clear_screen(0x000000);
   }
 
-  y += FONT_HEIGHT;
+  y += FONT_HEIGHT + LINE_SPACING;
   x = 0;
 }
 
