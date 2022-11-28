@@ -16,15 +16,5 @@ __attribute__((noreturn)) void _start(void) {
   load_idt();
   framebuffer_init();
 
-  for (size_t i = 0; i < 50; ++i) {
-    vprintk("Hello!\n", i);
-    CLI_SLEEP;
-  }
-
-  for (size_t i = 0; i < 50; ++i) {
-    vprintk("Cats go meow!\n", i);
-    CLI_SLEEP;
-  }
-
   while (1);
 }

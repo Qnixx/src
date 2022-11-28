@@ -1,6 +1,7 @@
 #include <drivers/video/framebuffer.h>
 #include <lib/limine.h>
 #include <lib/module.h>
+#include <lib/string.h>
 
 MODULE_NAME("Framebuffer");
 MODULE_DESCRIPTION("Standard Qnixx video driver");
@@ -47,6 +48,10 @@ uint32_t framebuffer_get_index(uint32_t x, uint32_t y) {
   return x + y * (framebuffer->pitch/4);
 }
 
+
+void framebuffer_clear_screen(uint32_t color) {
+  kmemset32((uint32_t*)(framebuffer->address), color, framebuffer->width * framebuffer->height); 
+}
 
 uint32_t* framebuffer_get_address(void) {
   return (uint32_t*)framebuffer->address;

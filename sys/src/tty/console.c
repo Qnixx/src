@@ -10,23 +10,11 @@
 
 static uint32_t x = 0, y = 0;
 
-
-static void scroll_down(void) {
-  const size_t SCREEN_HEIGHT = framebuffer_get_height();
-  const size_t SCREEN_PITCH = framebuffer_get_pitch();
-  uint32_t* framebuffer = framebuffer_get_address();
-
-  kmemzero(&framebuffer[framebuffer_get_index(0, y-FONT_HEIGHT)], SCREEN_PITCH*FONT_HEIGHT);
-  kmemzero(&framebuffer[framebuffer_get_index(0, 0)], SCREEN_PITCH*FONT_HEIGHT);
-
-  for (size_t y = FONT_HEIGHT; y < SCREEN_HEIGHT-FONT_HEIGHT; y += FONT_HEIGHT) {
-    kmemcpy(&framebuffer[framebuffer_get_index(0, y-FONT_HEIGHT)], &framebuffer[framebuffer_get_index(0, y)], SCREEN_PITCH*FONT_HEIGHT);
-  }
-}
-
 static void newline(void) {
   if (y >= framebuffer_get_height()-2) {
-    scroll_down();
+    y = 0;
+    x = 0;
+    framebuffer_clear_screen(0x000000);
   }
 
   y += FONT_HEIGHT;
