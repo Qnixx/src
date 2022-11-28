@@ -1,4 +1,5 @@
 #include <arch/x86/gdt.h>
+#include <arch/x86/tss.h>
 #include <lib/asm.h>
 #include <lib/module.h>
 
@@ -99,7 +100,7 @@ static struct GDTR gdtr = {
 };
 
 
-// struct TSSDescriptor* gdt_tss = (struct TSSDescriptor*)&gdt[GDT_TSS];
+tss_desc_t* gdt_tss = (tss_desc_t*)&gdt[GDT_TSS];
 
 
 void load_gdt(void) {
