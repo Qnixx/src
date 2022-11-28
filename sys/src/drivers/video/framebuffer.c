@@ -1,5 +1,11 @@
 #include <drivers/video/framebuffer.h>
 #include <lib/limine.h>
+#include <lib/module.h>
+
+MODULE_NAME("Framebuffer");
+MODULE_DESCRIPTION("Standard Qnixx video driver");
+MODULE_AUTHOR("Ian Marco Moffett");
+MODULE_LICENSE("BSD 3-Clause");
 
 
 static volatile struct limine_framebuffer_request framebuf_req = {
