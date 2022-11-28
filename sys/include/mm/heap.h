@@ -5,7 +5,7 @@
 
 #define HEAP_DEBUG 1
 #define HEAP_PAGES 2
-#define MAX_HEAP_SIZE (0x1000 * HEAP_PAGES)
+#define MAX_HEAP_SIZE (PAGE_SIZE * HEAP_PAGES)
 
 #define HEAPBLK_FREE 0
 #define HEAPBLK_USED 1

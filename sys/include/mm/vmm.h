@@ -6,6 +6,7 @@
 
 extern volatile struct limine_hhdm_request hhdm_request;
 
+#define PAGE_SIZE 0x1000
 #define VMM_HIGHER_HALF (hhdm_request.response->offset)
 #define PTE_ADDR_MASK 0x000FFFFFFFFFF000
 #define PTE_PRESENT (1ull << 0)

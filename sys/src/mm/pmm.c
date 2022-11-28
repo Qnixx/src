@@ -40,7 +40,7 @@ static void find_highest_chunk(void) {
 
 static inline size_t get_bitmap_size(void) {
   size_t highest_addr = used_mmap_entry->base+used_mmap_entry->length;
-  size_t bitmap_size = ALIGN_UP((highest_addr/0x1000)/8, 0x1000);
+  size_t bitmap_size = ALIGN_UP((highest_addr / PAGE_SIZE) / 8, PAGE_SIZE);
   return bitmap_size;
 }
 
@@ -92,8 +92,8 @@ static void init_bitmap(void) {
   for (size_t i = 0; i < resp->entry_count; ++i) {
     struct limine_memmap_entry* e = resp->entries[i];
     if (e->type == LIMINE_MEMMAP_USABLE && e->length >= bitmap_size) {
-      for (size_t j = 0; j < e->length; j += 0x1000) {
-        bitmap_unset_bit((e->base + j)/0x1000);
+      for (size_t j = 0; j < e->length; j += PAGE_SIZE) {
+        bitmap_unset_bit((e->base + j) / PAGE_SIZE);
       }
     }
   }
@@ -103,7 +103,7 @@ uintptr_t pmm_alloc(void) {
   for (size_t bit = 0; bit < get_bitmap_size()*8; ++bit) {
     if (!(bitmap_test(bit))) {
       bitmap_set_bit(bit);
-      return 0x1000*bit;
+      return PAGE_SIZE * bit;
     }
   }
 
@@ -111,7 +111,7 @@ uintptr_t pmm_alloc(void) {
 }
 
 void pmm_free(uintptr_t ptr) {
-  bitmap_unset_bit(ptr/0x1000);
+  bitmap_unset_bit(ptr / PAGE_SIZE);
 }
 
 void pmm_init(void) {
