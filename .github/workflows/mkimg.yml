@@ -19,7 +19,9 @@ jobs:
           sudo apt-get -y install git
           sudo apt-get -y install nasm
           sudo apt-get -y install xorriso
-          make toolchain
+          sudo apt-get -y install autoconf
+          autoconf
+          ./configure
           make
       - name: Uploading ISO as artifact
         uses: actions/upload-artifact@v3
