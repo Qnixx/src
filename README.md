@@ -1,7 +1,7 @@
 # Qnixx
 
 ## Build instructions
-``./configure --with-ip=192.168.1.152``
+``./configure --with-ip=192.168.1.152``<br>
 ``make``
 
 The --with-ip option is for your local ip 
