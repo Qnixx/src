@@ -118,7 +118,4 @@ $TARGET-gcc -v
 echo "Testing LD..."
 $TARGET-ld -v
 
-echo "Copying binaries.."
-sudo cp cross/bin/x86_64-elf-gcc /usr/local/bin/
-sudo cp cross/bin/x86_64-elf-ld /usr/local/bin/
 echo "Done!"

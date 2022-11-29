@@ -616,16 +616,15 @@ ac_unique_file="Qnixx"
 ac_unique_file="LICENSE"
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+GIT_LOCATED
+MAKE_LOCATED
+XORRISO_LOCATED
 NASM_LOCATED
-LD_LOCATED
-CC_LOCATED
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
 KERNEL_CFLAGS
 LOCAL_IP
-KERNEL_LD
-KERNEL_CC
 target_alias
 host_alias
 build_alias
@@ -672,8 +671,7 @@ with_ip
 '
       ac_precious_vars='build_alias
 host_alias
-target_alias
-KERNEL_CFLAGS'
+target_alias'
 
 
 # Initialize some variables set by options.
@@ -1291,19 +1289,6 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-ip               local ip [default=unknown]
 
-Some influential environment variables:
-  KERNEL_CFLAGS
-              C Compiler Flags [-fexceptions -std=gnu11 -ffreestanding
-              -fno-stack-protector -fno-pic -Werror=implicit
-              -Werror=implicit-function-declaration -Werror=implicit-int
-              -Werror=int-conversion -Werror=incompatible-pointer-types
-              -Werror=int-to-pointer-cast -Werror=return-type -Wunused
-              -mabi=sysv -mno-80387 -mno-mmx -mno-3dnow -mno-sse -mno-sse2
-              -mno-red-zone -mcmodel=kernel]
-
-Use these variables to override the choices made by `configure' or to help
-it to find libraries and programs with nonstandard names/locations.
-
 Report bugs to the package provider.
 _ACEOF
 ac_status=$?
@@ -1846,9 +1831,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-K_CC="x86_64-elf-gcc"
-K_LD="x86_64-elf-ld"
-
 
 BUILDDIR="$(pwd -P)"
 
@@ -1862,13 +1844,14 @@ fi
 
 
 # Build variables.
-KERNEL_CC=$K_CC
-
-KERNEL_LD=$K_LD
-
 LOCAL_IP=$with_ip
 
-
+KERNEL_CFLAGS="-fexceptions -std=gnu11 -ffreestanding -fno-stack-protector \
+  -fno-pic -Werror=implicit -Werror=implicit-function-declaration -Werror=implicit-int \
+  -Werror=int-conversion \
+  -Werror=incompatible-pointer-types -Werror=int-to-pointer-cast -Werror=return-type -Wunused \
+  -mabi=sysv -mno-80387 -mno-mmx \
+  -mno-3dnow -mno-sse -mno-sse2 -mno-red-zone -mcmodel=kernel"
 
 
 
@@ -1971,89 +1954,30 @@ test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
 
 test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
-# Extract the first word of "$K_CC", so it can be a program name with args.
-set dummy $K_CC; ac_word=$2
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-printf %s "checking for $ac_word... " >&6; }
-if test ${ac_cv_prog_CC_LOCATED+y}
+as_ac_File=`printf "%s\n" "ac_cv_file_$BUILDDIR/cross" | $as_tr_sh`
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $BUILDDIR/cross" >&5
+printf %s "checking for $BUILDDIR/cross... " >&6; }
+if eval test \${$as_ac_File+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
-  if test -n "$CC_LOCATED"; then
-  ac_cv_prog_CC_LOCATED="$CC_LOCATED" # Let the user override the test.
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$BUILDDIR/cross"; then
+  eval "$as_ac_File=yes"
 else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  case $as_dir in #(((
-    '') as_dir=./ ;;
-    */) ;;
-    *) as_dir=$as_dir/ ;;
-  esac
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
-    ac_cv_prog_CC_LOCATED="yes"
-    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
+  eval "$as_ac_File=no"
 fi
 fi
-CC_LOCATED=$ac_cv_prog_CC_LOCATED
-if test -n "$CC_LOCATED"; then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $CC_LOCATED" >&5
-printf "%s\n" "$CC_LOCATED" >&6; }
-else
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-fi
-
-
-# Extract the first word of "$K_LD", so it can be a program name with args.
-set dummy $K_LD; ac_word=$2
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-printf %s "checking for $ac_word... " >&6; }
-if test ${ac_cv_prog_LD_LOCATED+y}
+eval ac_res=\$$as_ac_File
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"
 then :
-  printf %s "(cached) " >&6
+
 else $as_nop
-  if test -n "$LD_LOCATED"; then
-  ac_cv_prog_LD_LOCATED="$LD_LOCATED" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  case $as_dir in #(((
-    '') as_dir=./ ;;
-    */) ;;
-    *) as_dir=$as_dir/ ;;
-  esac
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
-    ac_cv_prog_LD_LOCATED="yes"
-    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
+  as_fn_error $? "\"Please run 'bash tools/cross.sh'\"" "$LINENO" 5
 fi
-fi
-LD_LOCATED=$ac_cv_prog_LD_LOCATED
-if test -n "$LD_LOCATED"; then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LD_LOCATED" >&5
-printf "%s\n" "$LD_LOCATED" >&6; }
-else
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-fi
-
 
 # Extract the first word of "nasm", so it can be a program name with args.
 set dummy nasm; ac_word=$2
@@ -2097,17 +2021,151 @@ printf "%s\n" "no" >&6; }
 fi
 
 
+# Extract the first word of "xorriso", so it can be a program name with args.
+set dummy xorriso; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_prog_XORRISO_LOCATED+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  if test -n "$XORRISO_LOCATED"; then
+  ac_cv_prog_XORRISO_LOCATED="$XORRISO_LOCATED" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_prog_XORRISO_LOCATED="yes"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
 
-if ! test "x$CC_LOCATED" = "xyes"; then
-  bash tools/cross.sh
+fi
+fi
+XORRISO_LOCATED=$ac_cv_prog_XORRISO_LOCATED
+if test -n "$XORRISO_LOCATED"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $XORRISO_LOCATED" >&5
+printf "%s\n" "$XORRISO_LOCATED" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
 fi
 
-if ! test "x$LD_LOCATED" = "xyes"; then
-  bash tools/cross.sh
+
+# Extract the first word of "make", so it can be a program name with args.
+set dummy make; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_prog_MAKE_LOCATED+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  if test -n "$MAKE_LOCATED"; then
+  ac_cv_prog_MAKE_LOCATED="$MAKE_LOCATED" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_prog_MAKE_LOCATED="yes"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
 fi
+fi
+MAKE_LOCATED=$ac_cv_prog_MAKE_LOCATED
+if test -n "$MAKE_LOCATED"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $MAKE_LOCATED" >&5
+printf "%s\n" "$MAKE_LOCATED" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+# Extract the first word of "git", so it can be a program name with args.
+set dummy git; ac_word=$2
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+printf %s "checking for $ac_word... " >&6; }
+if test ${ac_cv_prog_GIT_LOCATED+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  if test -n "$GIT_LOCATED"; then
+  ac_cv_prog_GIT_LOCATED="$GIT_LOCATED" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  case $as_dir in #(((
+    '') as_dir=./ ;;
+    */) ;;
+    *) as_dir=$as_dir/ ;;
+  esac
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir$ac_word$ac_exec_ext"; then
+    ac_cv_prog_GIT_LOCATED="yes"
+    printf "%s\n" "$as_me:${as_lineno-$LINENO}: found $as_dir$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+GIT_LOCATED=$ac_cv_prog_GIT_LOCATED
+if test -n "$GIT_LOCATED"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $GIT_LOCATED" >&5
+printf "%s\n" "$GIT_LOCATED" >&6; }
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
+
 
 if ! test "x$NASM_LOCATED" = "xyes"; then
    as_fn_error $? "\"Please install nasm\"" "$LINENO" 5
+fi
+
+
+if ! test "x$XORRISO_LOCATED" = "xyes"; then
+   as_fn_error $? "\"Please install xorriso\"" "$LINENO" 5
+fi
+
+
+if ! test "x$MAKE_LOCATED" = "xyes"; then
+   as_fn_error $? "\"Please install make\"" "$LINENO" 5
+fi
+
+
+if ! test "x$GIT_LOCATED" = "xyes"; then
+   as_fn_error $? "\"Please install git\"" "$LINENO" 5
 fi
 
 ac_config_files="$ac_config_files Makefile"
