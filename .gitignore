@@ -7,3 +7,7 @@ dump.dat
 *.a
 *.EFI
 limine/
+autom4te.cache/
+config.log
+config.status
+Makefile/
