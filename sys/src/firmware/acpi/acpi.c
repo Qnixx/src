@@ -8,7 +8,7 @@
 
 
 MODULE_NAME("acpi");
-MODULE_DESCRIPTION("ACPI helper modules");
+MODULE_DESCRIPTION("ACPI helper module");
 MODULE_AUTHOR("Ian Marco Moffett");
 MODULE_LICENSE("BSD 3-Clause");
 
@@ -98,13 +98,17 @@ void acpi_init(void) {
   vnprintk("Verifying RSDT integrity..\n", 0);
 
   ASSERT(do_checksum(&rsdt->header), "ACPI RSDT integrity check failed! (checksum invalid)\n");
+  vnprintk("RSDT integrity => OK\n", 0);
+
   rsdt_entry_count = (rsdt->header.length - sizeof(rsdt->header)) / 4;
 
   find_madt();
   ASSERT(madt != NULL, "Could not locate ACPI MADT!\n");
 
   vnprintk("Verifying MADT integrity..\n", 0);
+
   ASSERT(do_checksum(&madt->header), "ACPI MADT integrity check failed! (checksum invalid)\n");
+  vnprintk("MADT integrity => OK\n", 0);
 
   parse_madt();
 }

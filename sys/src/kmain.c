@@ -9,6 +9,10 @@
 #include <arch/x86/tss.h>
 #include <mm/pmm.h>
 #include <mm/heap.h>
+#include <proc/proc.h>
+#include <firmware/acpi/acpi.h>
+#include <arch/x86/apic/ioapic.h>
+#include <arch/x86/apic/lapic.h>
 
 MODULE_NAME("kmain");
 MODULE_DESCRIPTION("Kernel startup module");
@@ -36,6 +40,13 @@ __attribute__((noreturn)) void _start(void) {
 
   init_mm();
   tss_init();
+
+  acpi_init();
+
+  __ioapic_init();
+  __lapic_init();
+
+  tasking_init();
 
   while (1);
 }
