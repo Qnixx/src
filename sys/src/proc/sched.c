@@ -52,7 +52,6 @@ static core_t* locate_with_smallest_queue(void) {
 
 
 static void init_proc(process_t* p, uint8_t is_ring3) {
-  p->cr3 = vmm_mkpml4();
   p->is_ring3 = is_ring3;
 
   if (!(is_ring3)) {
@@ -60,12 +59,10 @@ static void init_proc(process_t* p, uint8_t is_ring3) {
   } else {
     p->rsp_base = USER_STACKBASE;
 
-    uintptr_t old_cr3 = get_cr3();
-    ASMV("mov %0, %%cr3" :: "r" (p->cr3));
     k_mmap((void*)USER_STACKBASE, 1, PROT_READ | PROT_WRITE | PROT_USER);
-    ASMV("mov %0, %%cr3" :: "r" (old_cr3));
   }
 
+  p->cr3 = vmm_mkpml4();
   p->rsp = p->rsp_base + 0x1000-1;
   p->pid = next_pid++;
   p->next = NULL;
@@ -182,3 +179,9 @@ process_t* sched_make_task(uint8_t is_ring3) {
 
   return sched_multicore(is_ring3);
  }
+
+
+
+process_t* get_running_process_singlecore(void) {
+  return sc_running_process;
+}
