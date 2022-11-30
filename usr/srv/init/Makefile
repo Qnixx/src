@@ -7,4 +7,5 @@ CFILES = $(shell find src/ -name "*.c")
 
 .PHONY: all
 all: $(CFILES)
-	gcc $(CFLAGS) $^ -o ../../../meta/system/init.sys
+	gcc -c $(CFLAGS) $^
+	ld -T ../../link.ld *.o -o ../../../meta/system/init.sys
