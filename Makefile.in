@@ -10,7 +10,7 @@ CFILES = $(shell find sys/src/ -name "*.c")
 
 .PHONY: all
 all: cfiles asmfiles link limine cleanup
-	@#cd usr; make
+	@cd usr; make
 	@echo "Generating ISO..."
 	@mkdir -p iso_root
 	@mkdir -p iso_root/Qnixx
