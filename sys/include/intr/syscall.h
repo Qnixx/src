@@ -3,7 +3,7 @@
 
 #include <proc/proc.h>
 
-#define MAX_SYSCALLS 1
+#define MAX_SYSCALLS 2
 
 extern void(*syscalls[MAX_SYSCALLS])(trapframe_t* tf);
 
