@@ -7,6 +7,7 @@
 #include <lib/bootmodule.h>
 #include <lib/assert.h>
 #include <lib/elf.h>
+#include <fs/initrd.h>
 
 
 MODULE_NAME("proc");
@@ -77,10 +78,10 @@ _noreturn void tasking_init(void) {
   // Bootstrap the cores.
   supports_smp = !__smp_bootstrap_cores(&proc_corelist);
 
-  struct limine_file* init = get_module("/Qnixx/init.sys");
+  const char* init = initrd_open("init.sys");
   ASSERT(init != NULL, "init.sys not found!\n");
 
-  uintptr_t init_entrypoint = (uintptr_t)elf_load(init->address);
+  uintptr_t init_entrypoint = (uintptr_t)elf_load(init);
   process_t* init_process = sched_make_task(1);
   init_process->pmask |= PERM_SUPERUSER;
 

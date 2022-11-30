@@ -16,3 +16,4 @@ configure
 install-sh
 meta/system/init.sys
 initrd.sys
+meta/initrd/*.sys
