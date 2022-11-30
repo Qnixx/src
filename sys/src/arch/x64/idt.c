@@ -1,4 +1,6 @@
 #include <arch/x64/idt.h>
+#include <arch/x86/apic/ioapic.h>
+#include <firmware/acpi/acpi.h>
 #include <lib/module.h>
 
 #define TRAP_GATE_FLAGS 0x8F
@@ -42,4 +44,13 @@ void load_idt(void) {
 
 void register_exception_handler(uint8_t vector, void* isr) {
   set_desc(vector, isr, TRAP_GATE_FLAGS);
+}
+
+void register_int_handler(uint8_t vector, void* isr) {
+  set_desc(vector, isr, INT_GATE_FLAGS);
+}
+
+void register_irq_handler(uint8_t irq, void* isr) {
+  ioapic_set_entry(acpi_remap_irq(irq), 0x20 + irq);
+  register_int_handler(0x20 + irq, isr);
 }
