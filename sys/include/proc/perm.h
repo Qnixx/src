@@ -7,7 +7,7 @@
 #define PERM_PERM (1 << 0)
 
 /* Allows a process to read/write to I/O ports */
-#define PERM_IO (1 << 1)
+#define PERM_PIO (1 << 1)
 
 /* Allows a process to log to system logs */
 #define PERM_SYSLOG (1 << 2)
@@ -16,7 +16,7 @@
 /* All permissions (BE CAREFUL WITH THIS PLEASE!) */
 #define PERM_SUPERUSER               \
   (PERM_PERM                         \
-   | PERM_IO                         \
+   | PERM_PIO                        \
    | PERM_SYSLOG)
 
 
