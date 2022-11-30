@@ -21,6 +21,7 @@ core_t* proc_corelist = NULL;
 
 
 _noreturn static void processor_idle(void) {
+  ASMV("sti");
   while (1) {
     ASMV("hlt");
   }
