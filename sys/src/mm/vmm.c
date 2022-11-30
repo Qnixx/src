@@ -80,9 +80,15 @@ uintptr_t get_cr3(void) {
 }
 
 
-uintptr_t vmm_mkcr3(void) {
-  uintptr_t cr3 = pmm_alloc();
-  return cr3;
+uintptr_t vmm_mkpml4(void) {
+  uint64_t* cr3_val = (uint64_t*)get_cr3();
+  uint64_t* new = (uint64_t*)pmm_alloc();
+
+  for (uint16_t i = 0; i < 512; ++i) {
+    new[i] = cr3_val[i];
+  }
+
+  return (uintptr_t)new;
 }
 
 
