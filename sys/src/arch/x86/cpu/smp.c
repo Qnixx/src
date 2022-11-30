@@ -4,6 +4,7 @@
 #include <lib/module.h>
 #include <tty/console.h>
 #include <mm/vmm.h>
+#include <mm/heap.h>
 
 MODULE_NAME("smp");
 MODULE_DESCRIPTION("Symmetric Multiprocessing module");
@@ -23,8 +24,11 @@ static void __core_entry(struct limine_smp_info* info) {
   }
 }
 
+uint8_t smp_get_core_count(void) {
+  return smp_req.response->cpu_count;
+}
 
-uint8_t __smp_bootstrap_cores(void) {
+uint8_t __smp_bootstrap_cores(core_t** cores) {
   struct limine_smp_response* smp_resp = smp_req.response;
 
   if (smp_resp->cpu_count == 1) {
@@ -32,12 +36,20 @@ uint8_t __smp_bootstrap_cores(void) {
     return 1;
   }
 
+  *cores = kmalloc(sizeof(core_t) * (smp_resp->cpu_count));
+  core_t* core_list = *cores;
+  size_t core_list_idx = 0;
+
   vnprintk("CPU has %d cores.\n", smp_resp->cpu_count);
   vnprintk("Bootstrapping %d cores", smp_resp->cpu_count - 1);
 
   for (size_t i = 0; i < smp_resp->cpu_count; ++i) {
     // Do not bootstrap the BSP!
     if (smp_resp->cpus[i]->lapic_id == smp_resp->bsp_lapic_id) continue;
+
+    // Add core to the core list.
+    core_list[core_list_idx].queue_size = 0;
+    core_list[core_list_idx++].lapic_id = smp_resp->cpus[i]->lapic_id;
 
     vprintk(".");
     smp_resp->cpus[i]->extra_argument = (uint64_t)get_cr3();
