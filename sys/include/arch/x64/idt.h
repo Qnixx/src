@@ -30,7 +30,7 @@ void load_idt(void);
 void register_exception_handler(uint8_t vector, void* isr);
 void register_int_handler(uint8_t vector, void* isr);
 void register_user_int_handler(uint8_t vector, void* isr);
-void register_irq_handler(uint8_t irq, void* isr);
+void register_irq_handler(uint8_t irq, void* isr, size_t extra_redentry_data);
 
 
 #endif
