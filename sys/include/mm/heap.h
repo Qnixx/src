@@ -3,7 +3,7 @@
 
 #include <lib/types.h>
 
-#define HEAP_DEBUG 1
+#define HEAP_DEBUG 0
 #define HEAP_PAGES 20
 #define MAX_HEAP_SIZE (PAGE_SIZE * HEAP_PAGES)
 

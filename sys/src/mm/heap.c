@@ -24,7 +24,6 @@ void* alloc_pages(size_t pages) {
   for(size_t i = 0; i < pages; i++) {
     void* phys = (void*)pmm_alloc();
     if(phys == NULL) {
-      vnprintk("Cannot allocate another page!\n", 0);
       return NULL;
     }
   
@@ -44,12 +43,10 @@ static heapblk_t* first_fit(size_t size) {
 
 void* kmalloc(size_t size) {
   if (size == 0) {
-    vnprintk("kmalloc(0) in %s()\n", __func__);
     return NULL;
   }
 
   if (bytes_allocated + size >= MAX_HEAP_SIZE - 1) {
-    vnprintk("Heap full (%d bytes allocated) in %s()\n", bytes_allocated, __func__);
     return NULL;
   }
 
