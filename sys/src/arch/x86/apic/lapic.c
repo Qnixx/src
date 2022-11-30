@@ -75,6 +75,17 @@ static inline uint32_t read(uint16_t reg) {
   return *(volatile uint32_t*)(lapic_base + reg);
 }
 
+uint8_t lapic_read_id(void) {
+  return read(LAPIC_ID) >> 24;
+}
+
+void lapic_send_ipi(uint8_t apic_id, uint8_t vector) {
+  while (read(LAPIC_VER) & ICR_SEND_PENDING);
+  uint32_t control = vector | ICR_ASSERT;
+  write(LAPIC_ICRHI, (uint32_t)apic_id << 24);
+  write(LAPIC_ICRLO, control);
+}
+
 void __lapic_init(void) {
   write(LAPIC_DFR, 0xFFFFFFFF);       // Use flat model.
   write(LAPIC_LDR, 0x01000000);       // All cores use logical ID of 1.
