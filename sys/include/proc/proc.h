@@ -30,25 +30,31 @@ typedef struct {
   uint16_t ss;
 } _packed trapframe_t;
 
+struct Core;
 
 typedef struct Process {
   pid_t pid;
   uintptr_t cr3;
   uintptr_t rsp_base;
   uintptr_t rsp;
+  uint8_t is_ring3 : 1;
+  trapframe_t tf;
+  struct Core* host_core;           // NULL if BSP.
   struct Process* next;
 } process_t;
 
 
-typedef struct {
+typedef struct Core {
   uint8_t lapic_id;
   process_t* queue_base;
   process_t* queue_head;
+  process_t* running_process;
   size_t queue_size;
 } core_t;
 
 
 _noreturn void tasking_init(void);
 uint8_t is_smp_supported(void);
+core_t* proc_find_core(size_t lapic_id);
 
 #endif

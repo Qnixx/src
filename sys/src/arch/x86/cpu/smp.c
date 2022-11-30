@@ -1,4 +1,8 @@
 #include <arch/x86/cpu/smp.h>
+#include <arch/x86/apic/lapic.h>
+#include <arch/x64/idt.h>
+#include <arch/x86/gdt.h>
+#include <arch/x86/tss.h>
 #include <lib/limine.h>
 #include <lib/asm.h>
 #include <lib/module.h>
@@ -19,6 +23,12 @@ static volatile struct limine_smp_request smp_req = {
 
 
 static void __core_entry(struct limine_smp_info* info) {
+  load_idt();
+  load_gdt();
+  tss_init();
+  __lapic_init();
+
+  ASMV("sti");
   while (1) {
     ASMV("hlt");
   }

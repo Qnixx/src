@@ -13,6 +13,8 @@
 #include <firmware/acpi/acpi.h>
 #include <arch/x86/apic/ioapic.h>
 #include <arch/x86/apic/lapic.h>
+#include <drivers/timer/pit.h>
+#include <intr/intr.h>
 
 MODULE_NAME("kmain");
 MODULE_DESCRIPTION("Kernel startup module");
@@ -28,6 +30,8 @@ static void init_mm(void) {
 
 
 __attribute__((noreturn)) void _start(void) {
+  ASMV("cli");
+
   framebuffer_init();
   vprintk(" -- Welcome to Qnixx --\n\n");
 
@@ -45,6 +49,10 @@ __attribute__((noreturn)) void _start(void) {
 
   __ioapic_init();
   __lapic_init();
+
+  intr_init();
+
+  init_pit();
 
   tasking_init();
 
