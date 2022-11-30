@@ -78,3 +78,23 @@ uintptr_t get_cr3(void) {
   ASMV("mov %%cr3, %0" : "=a" (cr3_val));
   return cr3_val;
 }
+
+
+uintptr_t vmm_mkcr3(void) {
+  uintptr_t cr3 = pmm_alloc();
+  return cr3;
+}
+
+
+void* vmm_alloc(void) {
+  uintptr_t paddr = pmm_alloc();
+  if (paddr == 0) return NULL;
+
+  return (void*)(paddr + VMM_HIGHER_HALF);
+}
+
+
+void vmm_free(void* ptr) {
+  uintptr_t phys = (uintptr_t)ptr - VMM_HIGHER_HALF;
+  pmm_free(phys);
+}
