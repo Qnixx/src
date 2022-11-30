@@ -1,6 +1,7 @@
 # Qnixx
 
 ## Build instructions
+``bash autogen.sh``<br>
 ``./configure --with-ip=192.168.1.152``<br>
 ``make``
 
