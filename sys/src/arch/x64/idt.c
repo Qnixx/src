@@ -50,6 +50,11 @@ void register_int_handler(uint8_t vector, void* isr) {
   set_desc(vector, isr, INT_GATE_FLAGS);
 }
 
+
+void register_user_int_handler(uint8_t vector, void* isr) {
+  set_desc(vector, isr, IDT_INT_GATE_USER);
+}
+
 void register_irq_handler(uint8_t irq, void* isr) {
   ioapic_set_entry(acpi_remap_irq(irq), 0x20 + irq);
   register_int_handler(0x20 + irq, isr);
