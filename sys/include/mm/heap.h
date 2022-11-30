@@ -4,7 +4,7 @@
 #include <lib/types.h>
 
 #define HEAP_DEBUG 1
-#define HEAP_PAGES 2
+#define HEAP_PAGES 20
 #define MAX_HEAP_SIZE (PAGE_SIZE * HEAP_PAGES)
 
 #define HEAPBLK_FREE 0
