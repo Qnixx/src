@@ -80,3 +80,7 @@ void __lapic_init(void) {
   write(LAPIC_LDR, 0x01000000);       // All cores use logical ID of 1.
   write(LAPIC_SVR, (1 << 8) | 0xFF);  // Enable the local APIC for the current core.
 }
+
+void lapic_send_eoi(void) {
+  write(LAPIC_EOI, 0);
+}
