@@ -42,14 +42,11 @@ static void send_process(process_t* p, uint64_t rip) {
    *
    */
   if (p->host_core != NULL) {
-    vnprintk("%d\n", p->host_core->lapic_id);
     lapic_send_ipi(p->host_core->lapic_id, 0x82);
   } else {
     ASMV("int $0x82");
   }
 }
-
-
 
 core_t* proc_find_core(size_t lapic_id) {
   for (uint8_t i = 0; i < smp_get_core_count(); ++i) {
@@ -67,6 +64,15 @@ uint8_t is_smp_supported(void) {
 }
 
 
+process_t* get_running_process(void) {
+  if (is_smp_supported()) {
+    return proc_find_core(lapic_read_id())->running_process;
+  } else {
+    return get_running_process_singlecore();
+  }
+}
+
+
 _noreturn void tasking_init(void) {
   // Bootstrap the cores.
   supports_smp = !__smp_bootstrap_cores(&proc_corelist);
@@ -76,6 +82,8 @@ _noreturn void tasking_init(void) {
 
   uintptr_t init_entrypoint = (uintptr_t)elf_load(init->address);
   process_t* init_process = sched_make_task(1);
+  init_process->pmask |= PERM_SUPERUSER;
+
 
   send_process(init_process, init_entrypoint);
 

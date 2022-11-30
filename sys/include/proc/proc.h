@@ -3,6 +3,7 @@
 
 #include <lib/types.h>
 #include <lib/asm.h>
+#include <proc/perm.h>
 
 typedef uint16_t pid_t;
 
@@ -38,6 +39,7 @@ typedef struct Process {
   uintptr_t rsp_base;
   uintptr_t rsp;
   uint8_t is_ring3 : 1;
+  perm_t pmask;                     // Permissions mask.
   trapframe_t tf;
   struct Core* host_core;           // NULL if BSP.
   struct Process* next;
@@ -56,5 +58,6 @@ typedef struct Core {
 _noreturn void tasking_init(void);
 uint8_t is_smp_supported(void);
 core_t* proc_find_core(size_t lapic_id);
+process_t* get_running_process(void);
 
 #endif
