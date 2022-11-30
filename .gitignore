@@ -15,3 +15,4 @@ config.status
 configure
 install-sh
 meta/system/init.sys
+initrd.sys

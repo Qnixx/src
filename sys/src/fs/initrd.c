@@ -30,7 +30,7 @@ static size_t _getsize(const char* in) {
 }
 
 static void _init(void) {
-  initrd = get_module("/Ignis/initrd.sys")->address;
+  initrd = get_module("/Qnixx/initrd.sys")->address;
   ASSERT(initrd != NULL, "Could not find initrd.sys!\n");
 }
 
