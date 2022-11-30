@@ -23,6 +23,7 @@ static volatile struct limine_smp_request smp_req = {
 
 
 static void __core_entry(struct limine_smp_info* info) {
+  ASMV("cli");
   load_idt();
   load_gdt();
   tss_init();
