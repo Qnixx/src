@@ -3,5 +3,6 @@
 
 #include <proc/proc.h>
 
+process_t* sched_task(void);
 
 #endif
