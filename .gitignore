@@ -6,8 +6,11 @@ cross/
 dump.dat
 *.a
 *.EFI
+configure/
 limine/
 autom4te.cache/
 config.log
 config.status
 Makefile
+configure
+install-sh
