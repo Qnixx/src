@@ -8,4 +8,4 @@ CFILES = $(shell find src/ -name "*.c")
 .PHONY: all
 all: $(CFILES)
 	gcc -c $(CFLAGS) $^
-	ld -T ../../link.ld *.o -o ../../../meta/system/init.sys -L../../lib/libc/ -l:libqc.a
+	ld -T ../../link.ld *.o -o ../../../meta/initrd/init.sys -L../../lib/libc/ -l:libqc.a
