@@ -21,7 +21,7 @@ jobs:
           sudo apt-get -y install xorriso
           sudo apt-get -y install autoconf
           bash tools/cross.sh
-          autoconf
+          bash autogen.sh
           ./configure
           make
       - name: Uploading ISO as artifact
