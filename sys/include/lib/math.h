@@ -6,6 +6,10 @@
 #define BIG_ENDIAN(v) ((((v) & 0xFF) << 8) | (((v) >> 8) & 0xFF))
 #define IS_POWER_OF_2(x) ((x & (x-1)) == 0)
 #define OFF_BY(off, by) (~(off % ~(by)))
-#define DIV_CEIL(a, b) (a/b + !!(a%b))
+#define DIV_ROUNDUP(VALUE, DIV) ({ \
+    typeof(VALUE) DIV_ROUNDUP_value = VALUE; \
+    typeof(DIV) DIV_ROUNDUP_div = DIV; \
+    (DIV_ROUNDUP_value + (DIV_ROUNDUP_div - 1)) / DIV_ROUNDUP_div; \
+})
 
 #endif
