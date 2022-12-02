@@ -61,7 +61,6 @@ _unused static vfs_node_t* path_to_node(const char* path) {
   
   while (1) {
     if (*ptr == '\0' || (*ptr == '/' && *(ptr + 1) != '\0')) {
-      printk("%s\n", buf);
       buf[bufidx++] = 0;
       last_parent = get_node(last_parent, buf);
       if (last_parent == NULL) {
