@@ -11,14 +11,14 @@ size_t kstrlen(const char* str) {
 bool kmemcmp(const char* str1, const char* str2, size_t n) {
     while (*str1 && *str2) {
         if (*str1 != *str2) {
-            return false;
+            return 1;
         }
 
         ++str1;
         ++str2;
     }
 
-    return true;
+    return 0;
 }
 
 char* dec2str(size_t number) {
