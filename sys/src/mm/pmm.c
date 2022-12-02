@@ -12,7 +12,7 @@
 #include <lib/math.h>
 #include <lib/string.h>
 
-#define PMM_DEBUG 1
+#define PMM_DEBUG 0
 
 
 static volatile struct limine_memmap_request mmap_req = {
@@ -102,7 +102,7 @@ void pmm_init(void) {
 }
 
 
-uintptr_t pmm_alloc(void) {
+static uintptr_t pmm_alloc_inner(void) {
   for (size_t bit = 0; bit < get_bitmap_size()*8; ++bit) {
     if (!(bitmap_test(bit))) {
       bitmap_set_bit(bit);
@@ -114,8 +114,22 @@ uintptr_t pmm_alloc(void) {
 }
 
 
-void pmm_free(uintptr_t ptr) {
-  bitmap_unset_bit(ptr/0x1000);
+uintptr_t pmm_alloc(size_t frames) {
+  uintptr_t mem = 0;
+  for (size_t i = 0; i < frames; ++i) {
+    if (mem == 0) mem = pmm_alloc_inner();
+    if (mem == 0) return 0;
+  }
+
+  return mem;
+}
+
+
+void pmm_free(uintptr_t ptr, size_t frames) {
+  for (size_t i = 0; i < frames; ++i) {
+    bitmap_unset_bit(ptr/0x1000);
+    ptr += 0x1000;
+  }
 }
 
 #endif  //defined(__x86_64__)

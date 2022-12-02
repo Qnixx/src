@@ -24,11 +24,16 @@ static uintptr_t* get_next_level(pagemap_t* pagemap, uint16_t index, uint8_t do_
     return NULL;
   }
 
-  uintptr_t next_level = pmm_alloc();
+  uintptr_t next_level = pmm_alloc(1);
   ASSERT(next_level != 0, "Failed to allocate frame!\n");
 
   pagemap[index] = (pagemap_t)next_level | PTE_PRESENT | PTE_WRITABLE;
   return (uintptr_t*)next_level;
+}
+
+
+void* vmm_alloc(size_t pages) {
+  return (void*)(pmm_alloc(pages) + VMM_HIGHER_HALF);
 }
 
 

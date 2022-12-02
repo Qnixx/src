@@ -5,8 +5,8 @@
 
 
 void pmm_init(void);
-uintptr_t pmm_alloc(void);
-void pmm_free(uintptr_t ptr);
+uintptr_t pmm_alloc(size_t frames);
+void pmm_free(uintptr_t ptr, size_t frames);
 
 
 #endif

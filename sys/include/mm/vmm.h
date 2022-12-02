@@ -23,5 +23,6 @@ typedef uintptr_t paddr_t;
 
 
 void vmm_map_page(pagemap_t top_level, vaddr_t vaddr, paddr_t paddr, uint64_t flags);
+void* vmm_alloc(size_t pages);
 
 #endif
