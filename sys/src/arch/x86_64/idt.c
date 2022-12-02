@@ -1,10 +1,10 @@
-#include <arch/x86_64/idt.h>
-
 /*
  * Description: Interrupt descriptor table module.
  * Author(s): Ian Marco Moffett.
  *
  */
+
+#include <arch/x86_64/idt.h>
 
 #if defined(__x86_64__)
 
