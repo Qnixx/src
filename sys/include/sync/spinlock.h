@@ -4,7 +4,7 @@
 #include <lib/types.h>
 #include <lib/asm.h>
 
-typedef uint8_t lock;
+typedef uint8_t spinlock_t;
 
 #define SPINLOCK_ACQUIRE(LOCK)                        \
   do {                                                \
