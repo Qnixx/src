@@ -22,7 +22,7 @@ iso: sys/kernel.sys
 	@mkdir -p iso_root/boot
 	@cp meta/limine.cfg \
 		limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso_root/
-	@cp sys/kernel.sys meta/cat.bmp iso_root/boot/
+	@cp sys/kernel.sys meta/*.bmp iso_root/boot/
 	@xorriso -as mkisofs -b limine-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
 		--efi-boot limine-cd-efi.bin \
