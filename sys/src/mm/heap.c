@@ -94,3 +94,23 @@ void* kmalloc(size_t size) {
   SPINLOCK_RELEASE(lock);
   return DATA_START(region);
 }
+
+
+void kfree(void* ptr) {
+  block_tag_t* region = ptr - sizeof(block_tag_t);
+
+  for (block_tag_t* block = region; (block != NULL) && (DATA_START(block) != ptr); block = block->next) {
+    block->is_free = 1;
+  }
+
+  tail = region;
+  bytes_allocated -= region->size;
+}
+
+
+void* krealloc(void* oldptr, size_t sz) {
+  void* new = kmalloc(sz);
+  kmemcpy(new, oldptr, sz);
+  kfree(oldptr);
+  return new;
+}

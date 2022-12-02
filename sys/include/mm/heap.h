@@ -8,6 +8,8 @@
 
 
 void* kmalloc(size_t sz);
+void* krealloc(void* oldptr, size_t sz);
+void kfree(void* ptr);
 
 
 #endif
