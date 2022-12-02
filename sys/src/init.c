@@ -8,10 +8,6 @@ static void init_mm(void) {
   pmm_init();
 }
 
-
-static HASHMAP_TYPE(int) hm;
-
-
 void _start(void) {
   printk("Beginning boot process..\n");
   init_interrupts();
