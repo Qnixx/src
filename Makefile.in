@@ -13,12 +13,41 @@ SRC = $(call rwildcard,$(SRCDIR),*.c)
 OBJS = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC))
 
 .PHONY: all
-all: $(OBJS)
+all: $(OBJS) limine Qnixx.iso
+
+Qnixx.iso: sys/kernel.sys
+	@echo "Generating ISO..."
+	@mkdir -p iso_root
+	@mkdir -p iso_root/Qnixx
+	@cp meta/limine.cfg \
+		limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso_root/
+	@cp sys/kernel.sys iso_root/Qnixx/
+	@xorriso -as mkisofs -b limine-cd.bin \
+		-no-emul-boot -boot-load-size 4 -boot-info-table \
+		--efi-boot limine-cd-efi.bin \
+		-efi-boot-part --efi-boot-image --protective-msdos-label \
+		iso_root -o Qnixx.iso
+	@echo "Deploying Limine..."
+	@limine/limine-deploy Qnixx.iso
+	@rm -rf iso_root
+
+limine:
+	@echo "Fetching Limine binaries..."
+	@git clone https://github.com/limine-bootloader/limine.git --branch=v4.0-binary --depth=1
+	@make -C limine
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
 	$(CC) $(CFLAGS) -c $^ -o $@
 
+sys/kernel.sys:
+		@echo "Linking object files..."
+		@$(LD) $(shell find obj/ -name "*.o") -nostdlib -zmax-page-size=0x1000 -static -Tsys/link.ld -o sys/kernel.sys
+
 .PHONY: clean
 clean:
 	rm -rf obj
+
+.PHONY: clean_all
+clean_all:
+	rm -rf configure autom4te.cache config.status config.log install-sh Makefile
