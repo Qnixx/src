@@ -17,7 +17,7 @@ AC_SUBST(KERNEL_CFLAGS, ["-fexceptions -std=gnu11 -ffreestanding -fno-stack-prot
   -Werror=int-conversion \
   -Werror=incompatible-pointer-types -Werror=int-to-pointer-cast -Werror=return-type -Wunused \
   -mabi=sysv -mno-80387 -mno-mmx \
-  -mno-3dnow -mno-sse -mno-sse2 -mno-red-zone -mcmodel=kernel"])
+  -mno-3dnow -mno-sse -mno-sse2 -mno-red-zone -mcmodel=kernel -I sys/include/"])
 
 AC_PROG_INSTALL
 AC_CHECK_FILE([$BUILDDIR/cross],[],AC_MSG_ERROR("Please run 'bash tools/cross.sh'"))

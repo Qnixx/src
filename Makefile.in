@@ -13,15 +13,16 @@ SRC = $(call rwildcard,$(SRCDIR),*.c)
 OBJS = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC))
 
 .PHONY: all
-all: $(OBJS) limine Qnixx.iso
+all: $(OBJS) limine iso
 
-Qnixx.iso: sys/kernel.sys
+.PHONY: iso
+iso: sys/kernel.sys
 	@echo "Generating ISO..."
 	@mkdir -p iso_root
-	@mkdir -p iso_root/Qnixx
+	@mkdir -p iso_root/boot
 	@cp meta/limine.cfg \
 		limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso_root/
-	@cp sys/kernel.sys iso_root/Qnixx/
+	@cp sys/kernel.sys iso_root/boot/
 	@xorriso -as mkisofs -b limine-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
 		--efi-boot limine-cd-efi.bin \
@@ -43,6 +44,10 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 sys/kernel.sys:
 		@echo "Linking object files..."
 		@$(LD) $(shell find obj/ -name "*.o") -nostdlib -zmax-page-size=0x1000 -static -Tsys/link.ld -o sys/kernel.sys
+
+.PHONY: run
+run:
+	qemu-system-x86_64 --enable-kvm $(QEMU_ARGS) -serial stdio
 
 .PHONY: clean
 clean:
