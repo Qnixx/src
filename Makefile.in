@@ -13,10 +13,10 @@ SRC = $(call rwildcard,$(SRCDIR),*.c)
 OBJS = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC))
 
 .PHONY: all
-all: $(OBJS) limine iso
+all: $(OBJS) limine link iso
 
 .PHONY: iso
-iso: sys/kernel.sys
+iso:
 	@echo "Generating ISO..."
 	@mkdir -p iso_root
 	@mkdir -p iso_root/boot
@@ -41,7 +41,8 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
 	$(CC) $(CFLAGS) -c $^ -o $@
 
-sys/kernel.sys:
+.PHONY: link
+link:
 		@echo "Linking object files..."
 		@$(LD) $(shell find obj/ -name "*.o") -nostdlib -zmax-page-size=0x1000 -static -Tsys/link.ld -o sys/kernel.sys
 
