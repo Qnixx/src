@@ -23,6 +23,7 @@ _unused static uint8_t is_path_valid(const char* path) {
       case '7':
       case '8':
       case '9':
+      case '/':
       case '-':
       case '_':
         break;
@@ -49,7 +50,35 @@ static inline vfs_node_t* get_node(vfs_node_t* parent, const char* name) {
 }
 
 
-_unused static vfs_node_t* path_to_node(const char* path) {
+// A fs mountpoint could be '/tmp' for example.
+// '/' does not count!!
+static vfs_node_t* get_fs_mountpoint(const char* path) {
+  if (*path == '/') ++path;
+
+  size_t bufidx = 0;
+  char* buf = kmalloc(kstrlen(path) + 1);
+  vfs_node_t* ret = NULL;
+
+  const char* ptr = path;
+
+  while (1) {
+    if (*ptr == '/' || *ptr == '\0') {
+      buf[bufidx++] = '\0';
+      ret = get_node(vfs_root, buf);
+      kfree(buf);
+      return ret;
+    }
+
+    buf[bufidx++] = *ptr;
+    ++ptr;
+  }
+}
+
+vfs_node_t* vfs_get_root(void) {
+  return vfs_root;
+}
+
+vfs_node_t* vfs_path_to_node(const char* path) {
   if (*path == '/') ++path;
 
   vfs_node_t* last_parent = vfs_root;
@@ -86,10 +115,20 @@ _unused static vfs_node_t* path_to_node(const char* path) {
 }
 
 
-vfs_node_t* vfs_make_node(vfs_fs_t* fs, vfs_node_t* parent, const char* path, uint8_t is_dir) {
+FILE* fopen(const char* path) { 
+  vfs_node_t* mountpoint = get_fs_mountpoint(path);
+  if (mountpoint == NULL) return NULL;
+
+  vfs_node_t* node = vfs_path_to_node(path);
+  if (node == NULL) return NULL;
+  return mountpoint->filesystem->open(node->name);
+}
+
+
+vfs_node_t* vfs_make_node(vfs_fs_t* fs, vfs_node_t* parent, const char* name, uint8_t is_dir) {
   vfs_node_t* node = kmalloc(sizeof(vfs_node_t));
-  node->path = kmalloc(kstrlen(path) + 1);
-  kmemcpy(node->path, path, kstrlen(path));
+  node->name = kmalloc(kstrlen(name) + 1);
+  kmemcpy(node->name, name, kstrlen(name));
 
   node->parent = parent;
   node->filesystem = fs;
@@ -100,7 +139,7 @@ vfs_node_t* vfs_make_node(vfs_fs_t* fs, vfs_node_t* parent, const char* path, ui
   } 
 
   if (parent != NULL) {
-    HASHMAP_INSERT(&parent->children, path, kstrlen(path), node);
+    HASHMAP_INSERT(&parent->children, name, kstrlen(name), node);
     ++parent->n_children;
   }
 

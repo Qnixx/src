@@ -2,6 +2,7 @@
 #include <intr/init.h>
 #include <mm/pmm.h>
 #include <fs/vfs.h>
+#include <fs/tmpfs.h>
 
 
 static void init_mm(void) {
@@ -13,5 +14,6 @@ void _start(void) {
   init_interrupts();
   init_mm();
   vfs_init();
+  tmpfs_init();
   while (1);
 }
