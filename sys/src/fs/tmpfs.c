@@ -56,5 +56,5 @@ static vfs_fs_t tmpfs = {
 void tmpfs_init(void) {
   tmpfs_loc = vfs_make_node(&tmpfs, vfs_get_root(), "tmp", 1);
   tmpfs_create_file("blah.txt");
-  printk("%x\n", fopen("/tmp/blah.txt"));
+  printk("%x\n", fopen("/tmp/blah.txty", "w"));
 }

@@ -74,6 +74,37 @@ static vfs_node_t* get_fs_mountpoint(const char* path) {
   }
 }
 
+/*
+ *  In /tmp/blah.txt this will yield blah.txt
+ *
+ */
+static const char* get_fs_last_pathname(const char* path) {
+  if (*path == '/') ++path;
+  
+  size_t path_size = kstrlen(path);
+  size_t bufidx = 0;
+  char* buf = kmalloc(path_size + 1);
+
+  const char* ptr = path + path_size;
+  size_t i = path_size;
+  while (*ptr != '/') {
+    if (i <= 0) {
+      kfree(buf);
+      return NULL;
+    }
+    --ptr;
+    --i;
+  }
+
+  while (1) {
+    if (*ptr != '/') buf[bufidx++] = *ptr; 
+    if (*ptr == '\0') break;
+    ++ptr;
+  }
+
+  return buf;
+}
+
 vfs_node_t* vfs_get_root(void) {
   return vfs_root;
 }
@@ -114,13 +145,34 @@ vfs_node_t* vfs_path_to_node(const char* path) {
   return last_parent != vfs_root ? last_parent : NULL;
 }
 
+#define FOPEN_MODE_READ (1 << 0)
+#define FOPEN_MODE_WRITE (1 << 1)
 
-FILE* fopen(const char* path) { 
+FILE* fopen(const char* path, const char* mode) {
+  uint8_t mode_flags = 0;
+  
+  /* Set mode flags */
+  if (kstrcmp(mode, "w") == 0) {
+    mode_flags |= FOPEN_MODE_WRITE;
+  } else {
+    mode_flags |= FOPEN_MODE_READ;
+  }
+
   vfs_node_t* mountpoint = get_fs_mountpoint(path);
   if (mountpoint == NULL) return NULL;
 
   vfs_node_t* node = vfs_path_to_node(path);
-  if (node == NULL) return NULL;
+  if (node == NULL) {
+    /* If we are reading and the file is not found, return NULL */
+    if (!(mode_flags & FOPEN_MODE_WRITE)) return NULL;
+
+    /* If we are writing and the path is not found, create the file */
+    const char* path_end = get_fs_last_pathname(path);
+    mountpoint->filesystem->create(path_end);
+    
+    /* Now return the file node */
+    return mountpoint->filesystem->open(path_end);
+  }
   return mountpoint->filesystem->open(node->name);
 }
 

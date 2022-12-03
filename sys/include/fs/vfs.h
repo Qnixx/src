@@ -29,7 +29,7 @@ vfs_node_t* vfs_path_to_node(const char* path);
 vfs_node_t* vfs_get_root(void);
 void vfs_init(void);
 
-FILE* fopen(const char* path);
+FILE* fopen(const char* path, const char* mode);
 
 
 #endif
