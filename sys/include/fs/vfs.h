@@ -25,7 +25,6 @@ typedef struct vfs_fs {
 
 
 vfs_node_t* vfs_make_node(vfs_fs_t* fs, vfs_node_t* parent, const char* name, uint8_t is_dir);
-vfs_node_t* vfs_path_to_node(const char* path);
 vfs_node_t* vfs_get_root(void);
 void vfs_init(void);
 

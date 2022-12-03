@@ -109,7 +109,7 @@ vfs_node_t* vfs_get_root(void) {
   return vfs_root;
 }
 
-vfs_node_t* vfs_path_to_node(const char* path) {
+static vfs_node_t* vfs_path_to_node(const char* path) {
   if (*path == '/') ++path;
 
   vfs_node_t* last_parent = vfs_root;
