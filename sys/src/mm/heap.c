@@ -17,7 +17,7 @@
 #define MIN_EXP 8
 #define DATA_START(mem_block) (((char*) mem_block) + sizeof(block_tag_t))
 
-#define DEBUG 1
+#define DEBUG 0
 
 static size_t bytes_allocated = 0;        /* How many bytes are allocated */
 static uint8_t is_heap_init = 0;          /* 1 if heap has been set up */
