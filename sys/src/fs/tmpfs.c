@@ -22,13 +22,13 @@ static vfs_node_t* tmpfs_loc = NULL;
 static vfs_fs_t tmpfs;
 
 
-static void tmpfs_write(void* fs_node, char* buf, size_t n_bytes);
+static void* tmpfs_open_file(const char* name);
 static void tmpfs_read(void* fs_node, char* buf, size_t n_bytes);
 static void tmpfs_write(void* fs_node, char* buf, size_t n_bytes);
 static void tmpfs_close_file(void* fs_node);
 
 static file_ops_t default_file_ops = {
-  .write = tmpfs_write,
+  .open = tmpfs_open_file,
   .read = tmpfs_read,
   .write = tmpfs_write,
   .close = tmpfs_close_file
@@ -109,19 +109,4 @@ void tmpfs_init(void) {
   tmpfs.default_fops = &default_file_ops;
 
   tmpfs_loc = vfs_make_node(&tmpfs, vfs_get_root(), "tmp", 1, tmpfs.fops);
-
-  char buf[] = "I am blah.txt";
-  FILE* fp = fopen("/tmp/blah.txt", "w");
-  printk("[tmpfs]: Opening /tmp/blah.txt\n");
- 
-  fwrite(fp, buf, sizeof(buf));
-  printk("[tmpfs]: Writing phrase to /tmp/blah.txt\n");
-
-  kmemzero(buf, sizeof(buf));
-  fread(fp, buf, sizeof(buf));
-  
-  printk("[tmpfs]: Reading /tmp/blah.txt..\n");
-  printk("[tmpfs]: /tmp/blah.txt contains: %s\n", buf);
-  printk("[tmpfs]: Closing /tmp/blah.txt\n");
-  fclose(fp);
 }
