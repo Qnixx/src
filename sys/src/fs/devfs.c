@@ -37,7 +37,8 @@ static void* devfs_open(const char* name) {
   // TODO: Add lock only per process.
   if (dev->lock) return NULL;
   dev->lock = 1;
-  dev->fops->open(name);
+
+  if (dev->fops->open) dev->fops->open(name);
   return dev;
 }
 
@@ -53,6 +54,13 @@ static void devfs_write(void* fs_node, char* in_buf, size_t n_bytes) {
   devfs_fileheader_t* dev = (devfs_fileheader_t*)fs_node;
   if (!(dev->lock)) return;
   if (dev->fops->write) dev->fops->write(fs_node, in_buf, n_bytes);
+}
+
+
+static void devfs_close(void* fs_node) {
+  devfs_fileheader_t* dev = (devfs_fileheader_t*)fs_node;
+  if (dev->fops->close) dev->fops->close(fs_node);
+  dev->lock = 0;
 }
 
 static file_ops_t default_file_ops = {
@@ -83,6 +91,7 @@ void devfs_init(void) {
 
   devfs.fops->create = devfs_stub_create;
   devfs.fops->open = devfs_open;
+  devfs.fops->close = devfs_close;
   devfs.default_fops = &default_file_ops;
 
   devfs_loc = vfs_make_node(&devfs, vfs_get_root(), "dev", 1, devfs.fops);
