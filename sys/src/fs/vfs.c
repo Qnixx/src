@@ -149,6 +149,11 @@ static vfs_node_t* vfs_path_to_node(const char* path) {
 #define FOPEN_MODE_WRITE (1 << 1)
 
 FILE* fopen(const char* path, const char* mode) {
+  if (vfs_root == NULL) {
+    /* Do not run if the filesystem is not initialized */
+    return NULL;
+  }
+
   FILE* fp = kmalloc(sizeof(FILE));
   uint8_t mode_flags = 0;
   
@@ -206,7 +211,7 @@ void fwrite(FILE* stream, char* in_ptr, size_t n_bytes) {
 
 
 void fclose(FILE* stream) {
-  stream->vfs_node->fops->close(stream->fs_node);
+  stream->vfs_node->filesystem->fops->close(stream->fs_node);
 }
 
 
