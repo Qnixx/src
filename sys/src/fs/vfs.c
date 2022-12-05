@@ -149,6 +149,7 @@ static vfs_node_t* vfs_path_to_node(const char* path) {
 #define FOPEN_MODE_WRITE (1 << 1)
 
 FILE* fopen(const char* path, const char* mode) {
+  FILE* fp = kmalloc(sizeof(FILE));
   uint8_t mode_flags = 0;
   
   /* Set mode flags */
@@ -162,28 +163,56 @@ FILE* fopen(const char* path, const char* mode) {
   if (mountpoint == NULL) return NULL;
 
   vfs_node_t* node = vfs_path_to_node(path);
+  const char* path_end = get_fs_last_pathname(path);
   if (node == NULL) {
     /* If we are reading and the file is not found, return NULL */
-    if (!(mode_flags & FOPEN_MODE_WRITE)) return NULL;
+    if (!(mode_flags & FOPEN_MODE_WRITE)) {
+      kfree(fp);
+      return NULL;
+    }
 
     /* If we are writing and the path is not found, create the file */
-    const char* path_end = get_fs_last_pathname(path);
-    mountpoint->filesystem->create(path_end);
+    if ((mountpoint->filesystem->fops->create(path_end)) == 1) {
+      /* File already exists */
+      kfree(fp);
+      return NULL;
+    }
+
+    /* Now create the node */
+    node = vfs_make_node(mountpoint->filesystem, mountpoint, path_end, 0, mountpoint->filesystem->default_fops);
     
     /* Now return the file node */
-    return mountpoint->filesystem->open(path_end);
+    fp->fs_node = mountpoint->filesystem->fops->open(path_end);
+    fp->vfs_node = node;
+    return fp;
   }
-  return mountpoint->filesystem->open(node->name);
+
+  fp->fs_node = mountpoint->filesystem->fops->open(path_end);
+  fp->vfs_node = node;
+  return fp;
 }
 
 
-vfs_node_t* vfs_make_node(vfs_fs_t* fs, vfs_node_t* parent, const char* name, uint8_t is_dir) {
+void fread(FILE* stream, char* out_ptr, size_t n_bytes) {
+  /* Call the filesystems read() function */
+  stream->vfs_node->fops->read(stream->fs_node, out_ptr, n_bytes);
+}
+
+
+void fwrite(FILE* stream, char* in_ptr, size_t n_bytes) {
+  /* Call the filesystems write() function */
+  stream->vfs_node->fops->write(stream->fs_node, in_ptr, n_bytes);
+}
+
+
+vfs_node_t* vfs_make_node(vfs_fs_t* fs, vfs_node_t* parent, const char* name, uint8_t is_dir, file_ops_t* fops) {
   vfs_node_t* node = kmalloc(sizeof(vfs_node_t));
   node->name = kmalloc(kstrlen(name) + 1);
   kmemcpy(node->name, name, kstrlen(name));
 
   node->parent = parent;
   node->filesystem = fs;
+  node->fops = fops;
 
   if (is_dir) {
     node->children = (typeof(node->children))HASHMAP_INIT(256);
@@ -191,7 +220,7 @@ vfs_node_t* vfs_make_node(vfs_fs_t* fs, vfs_node_t* parent, const char* name, ui
   } 
 
   if (parent != NULL) {
-    HASHMAP_INSERT(&parent->children, name, kstrlen(name), node);
+    HASHMAP_SINSERT(&parent->children, name, node);
     ++parent->n_children;
   }
 
@@ -199,7 +228,7 @@ vfs_node_t* vfs_make_node(vfs_fs_t* fs, vfs_node_t* parent, const char* name, ui
 }
 
 void vfs_init(void) {
-  vfs_root = vfs_make_node(NULL, NULL, "", 1);
+  vfs_root = vfs_make_node(NULL, NULL, "", 1, NULL);
   filesystems = (typeof(filesystems))HASHMAP_INIT(256);
   printk("[vfs]: Finished setting up.\n");
 }
