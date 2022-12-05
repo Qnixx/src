@@ -205,6 +205,11 @@ void fwrite(FILE* stream, char* in_ptr, size_t n_bytes) {
 }
 
 
+void fclose(FILE* stream) {
+  stream->vfs_node->fops->close(stream->fs_node);
+}
+
+
 vfs_node_t* vfs_make_node(vfs_fs_t* fs, vfs_node_t* parent, const char* name, uint8_t is_dir, file_ops_t* fops) {
   vfs_node_t* node = kmalloc(sizeof(vfs_node_t));
   node->name = kmalloc(kstrlen(name) + 1);

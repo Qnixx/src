@@ -25,11 +25,13 @@ static vfs_fs_t tmpfs;
 static void tmpfs_write(void* fs_node, char* buf, size_t n_bytes);
 static void tmpfs_read(void* fs_node, char* buf, size_t n_bytes);
 static void tmpfs_write(void* fs_node, char* buf, size_t n_bytes);
+static void tmpfs_close_file(void* fs_node);
 
 static file_ops_t default_file_ops = {
   .write = tmpfs_write,
   .read = tmpfs_read,
-  .write = tmpfs_write
+  .write = tmpfs_write,
+  .close = tmpfs_close_file
 };
 
 static int tmpfs_create_file(const char* name) {
@@ -63,6 +65,11 @@ static void* tmpfs_open_file(const char* name) {
   
   file->lock = 1;
   return file;
+}
+
+static void tmpfs_close_file(void* fs_node) {
+  tmpfs_fileheader_t* file = (tmpfs_fileheader_t*)fs_node;
+  file->lock = 0;
 }
 
 static void tmpfs_read(void* fs_node, char* buf, size_t n_bytes) {
@@ -115,4 +122,6 @@ void tmpfs_init(void) {
   
   printk("[tmpfs]: Reading /tmp/blah.txt..\n");
   printk("[tmpfs]: /tmp/blah.txt contains: %s\n", buf);
+  printk("[tmpfs]: Closing /tmp/blah.txt\n");
+  fclose(fp);
 }

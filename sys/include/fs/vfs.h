@@ -13,6 +13,7 @@ typedef struct {
   void*(*open)(const char* name);
   void(*read)(void* fs_node, char* buf, size_t n_bytes);
   void(*write)(void* fs_node, char* buf, size_t n_bytes);
+  void(*close)(void* fs_node);
 } file_ops_t;
 
 typedef struct vfs_node {
@@ -41,5 +42,6 @@ void vfs_init(void);
 FILE* fopen(const char* path, const char* mode);
 void fread(FILE* stream, char* out_ptr, size_t n_bytes);
 void fwrite(FILE* stream, char* in_ptr, size_t n_bytes);
+void fclose(FILE* stream);
 
 #endif
