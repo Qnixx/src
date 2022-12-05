@@ -116,11 +116,10 @@ pci_dev_t* pci_find_any(uint8_t class, uint8_t subclass, int8_t interface) {
         if (read_class(bus, slot, func) == class && read_subclass(bus, slot, func) == subclass) {
           if (interface != -1) {
             if (read_prog_if(bus, slot, func) != interface) continue;
+            init_dev(dev, bus, slot, func);
+            return dev;
           }
         }
-
-        init_dev(dev, bus, slot, func);
-        return dev;
       }
     }
   }
