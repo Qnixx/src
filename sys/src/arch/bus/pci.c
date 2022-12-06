@@ -129,3 +129,22 @@ pci_dev_t* pci_find_any(uint8_t class, uint8_t subclass, int8_t interface) {
   kfree(dev);
   return NULL;
 }
+
+
+pci_dev_t* pci_find(uint16_t vendor_id, uint16_t device_id) {
+  pci_dev_t* dev = kmalloc(sizeof(pci_dev_t));
+
+  for (uint8_t bus = 0; bus < 5; ++bus) {
+    for (uint8_t slot = 0; slot < 32; ++slot) {
+      for (uint8_t func = 0; func < 8; ++func) {
+        if (read_vendor(bus, slot, func) == vendor_id && read_devid(bus, slot, func) == device_id) {
+          init_dev(dev, bus, slot, func);
+          return dev;
+        }
+      }
+    }
+  }
+
+  kfree(dev);
+  return NULL;
+}
