@@ -99,6 +99,6 @@ void acpi_init(void) {
   ASSERT(do_checksum(&madt->header), "ACPI MADT checksum invalid!\n");
 
   parse_madt();
-  printk("[acpi] I/O APIC base @%x\n", ioapic_base);
-  printk("[acpi] Local APIC base @%x\n", lapic_base);
+  printk("[acpi]: I/O APIC base @%x\n", ioapic_base);
+  printk("[acpi]: Local APIC base @%x\n", lapic_base);
 }
