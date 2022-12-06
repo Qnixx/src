@@ -1,4 +1,6 @@
 #include <arch/x86/apic/lapic.h>
+#include <drivers/timer/pit.h>
+#include <lib/log.h>
 
 // Local APIC Registers
 #define LAPIC_ID                        0x0020  // Local APIC ID
@@ -68,6 +70,36 @@ static uint32_t read(uint16_t reg) {
 }
 
 
+static void lapic_timer_stop(void) {
+  write(LAPIC_TICR, 0);
+  write(LAPIC_TIMER, 1 << 16);
+}
+
+
+static void init_lapic_timer(void) {
+  lapic_timer_stop();
+
+  // Setup PIT.
+  pit_set_count(0xFFFF);
+
+  // Set up the timer.
+  write(LAPIC_TIMER, (1 << 16) | 0xFF);
+  write(LAPIC_TDCR, 0);
+
+  uint32_t init_tick = pit_get_count();
+  uint32_t samples = 0xFFFFF;
+  write(LAPIC_TICR, samples);
+  
+  // Wait until TCCR is zero.
+  while (read(LAPIC_TCCR) != 0);
+  
+  uint32_t final_tick = pit_get_count();
+  uint32_t total_ticks = init_tick - final_tick;
+
+  printk("[lapic]: Local APIC timer frequency: @%dGHz\n", (((samples/total_ticks)*PIT_DIVIDEND))/1000000000);
+}
+
+
 void lapic_send_ipi(uint8_t apic_id, uint8_t vector) {
   while (read(LAPIC_VER) & ICR_SEND_PENDING);
   uint32_t control = vector | ICR_ASSERT;
@@ -96,4 +128,5 @@ void lapic_init(void) {
    */
 
   write(LAPIC_SVR, (1 << 8) | 0xFF);
+  init_lapic_timer();
 }
