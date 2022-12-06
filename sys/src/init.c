@@ -6,6 +6,8 @@
 #include <fs/devfs.h>
 #include <drivers/serial.h>
 #include <acpi/acpi.h>
+#include <arch/x86/apic/ioapic.h>
+#include <arch/x86/apic/lapic.h>
 
 
 static void init_mm(void) {
@@ -33,6 +35,8 @@ void _start(void) {
   init_drivers();
 
   acpi_init();
+  ioapic_init();
+  lapic_init();
 
   char buf[] = "Hello, World!";
   FILE* fp = fopen("/dev/serial", "w");
