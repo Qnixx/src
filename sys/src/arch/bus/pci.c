@@ -97,6 +97,7 @@ static inline void init_dev(pci_dev_t* dev, uint8_t bus, uint8_t slot, uint8_t f
   dev->bars[2] = get_bar2(bus, slot, func);
   dev->bars[3] = get_bar3(bus, slot, func);
   dev->bars[4] = get_bar4(bus, slot, func);
+  dev->bars[5] = get_bar5(bus, slot, func);
   dev->bus = bus;
   dev->slot = slot;
   dev->func = func;
