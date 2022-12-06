@@ -5,6 +5,7 @@
 #include <fs/tmpfs.h>
 #include <fs/devfs.h>
 #include <drivers/serial.h>
+#include <acpi/acpi.h>
 
 
 static void init_mm(void) {
@@ -30,6 +31,8 @@ void _start(void) {
 
   init_fs();
   init_drivers();
+
+  acpi_init();
 
   char buf[] = "Hello, World!";
   FILE* fp = fopen("/dev/serial", "w");
