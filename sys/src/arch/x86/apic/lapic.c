@@ -1,5 +1,7 @@
 #include <arch/x86/apic/lapic.h>
+#include <arch/x86_64/idt.h>
 #include <drivers/timer/pit.h>
+#include <intr/irq.h>
 #include <lib/log.h>
 
 // Local APIC Registers
@@ -78,6 +80,7 @@ static void lapic_timer_stop(void) {
 
 static void init_lapic_timer(void) {
   lapic_timer_stop();
+  register_irq(0, _irq0);
 
   // Setup PIT.
   pit_set_count(0xFFFF);
@@ -91,6 +94,7 @@ static void init_lapic_timer(void) {
   write(LAPIC_TICR, samples);
   
   // Wait until TCCR is zero.
+  ASMV("sti");
   while (read(LAPIC_TCCR) != 0);
   
   uint32_t final_tick = pit_get_count();

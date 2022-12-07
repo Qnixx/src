@@ -13,7 +13,7 @@ SRC = $(call rwildcard,$(SRCDIR),*.c)
 OBJS = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SRC))
 
 .PHONY: all
-all: $(OBJS) limine link iso
+all: $(OBJS) asmfiles limine link iso
 
 .PHONY: iso
 iso:
@@ -41,8 +41,15 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	mkdir -p $(shell dirname $@)
 	$(CC) $(CFLAGS) -c $^ -o $@
 
+.PHONY: asmfiles
+asmfiles:
+	@echo "Compiling assembly sources..."
+	@for source in $$(find sys/src/ -name "*.asm"); do nasm -felf64 $$source; done
+
 .PHONY: link
 link:
+		@mkdir -p obj/asm/
+		@mv $(shell find sys/src/ -name "*.o") obj/asm/
 		@echo "Linking object files..."
 		@$(LD) $(shell find obj/ -name "*.o") -nostdlib -zmax-page-size=0x1000 -static -Tsys/link.ld -o sys/kernel.sys
 
