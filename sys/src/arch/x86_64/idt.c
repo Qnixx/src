@@ -5,6 +5,8 @@
  */
 
 #include <arch/x86_64/idt.h>
+#include <arch/x86/apic/ioapic.h>
+#include <acpi/acpi.h>
 
 #if defined(__x86_64__)
 
@@ -37,6 +39,12 @@ static void set_desc(uint8_t vector, void* isr, uint8_t flags) {
 
 void register_exception_handler(uint8_t vector, void* isr) {
   set_desc(vector, isr, TRAP_GATE_FLAGS);
+}
+
+
+void register_irq(uint8_t irq, void* isr) {
+  set_desc(0x20 + irq, isr, INT_GATE_FLAGS);
+  ioapic_set_entry(acpi_remap_irq(irq), 0x20 + irq);
 }
 
 

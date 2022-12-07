@@ -26,6 +26,7 @@ struct idtr {
 } _packed;
 
 void register_exception_handler(uint8_t vector, void* isr);
+void register_irq(uint8_t irq, void* isr);
 void load_idt(void);
 
 #endif
