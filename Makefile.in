@@ -48,10 +48,10 @@ asmfiles:
 
 .PHONY: link
 link:
-		@mkdir -p obj/asm/
-		@mv $(shell find sys/src/ -name "*.o") obj/asm/
+		mkdir -p asmobj/
+		@mv $(shell find sys/src/ -name "*.o") asmobj/
 		@echo "Linking object files..."
-		@$(LD) $(shell find obj/ -name "*.o") -nostdlib -zmax-page-size=0x1000 -static -Tsys/link.ld -o sys/kernel.sys
+		@$(LD) $(shell find obj/ -name "*.o") asmobj/* -nostdlib -zmax-page-size=0x1000 -static -Tsys/link.ld -o sys/kernel.sys
 
 .PHONY: run
 run:
