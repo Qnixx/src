@@ -111,6 +111,32 @@ void lapic_send_ipi(uint8_t apic_id, uint8_t vector) {
   write(LAPIC_ICRLO, control);
 }
 
+
+void lapic_send_init(uint8_t apic_id) {
+  while (read(LAPIC_VER) & ICR_SEND_PENDING);
+  write(LAPIC_ICRHI, apic_id << 24);
+  write(LAPIC_ICRLO, ICR_INIT
+                     | ICR_PHYSICAL
+                     | ICR_ASSERT
+                     | ICR_EDGE
+                     | ICR_NO_SHORTHAND);
+
+  while (read(LAPIC_ICRLO) & ICR_SEND_PENDING);
+}
+
+
+void lapic_send_startup(uint8_t apic_id, uint8_t vector) {
+  while (read(LAPIC_VER) & ICR_SEND_PENDING);
+  write(LAPIC_ICRHI, apic_id << 24);
+  write(LAPIC_ICRLO, ICR_STARTUP
+                     | ICR_PHYSICAL
+                     | ICR_ASSERT
+                     | ICR_EDGE
+                     | ICR_NO_SHORTHAND);
+
+  while (read(LAPIC_ICRLO) & ICR_SEND_PENDING);
+}
+
 uint32_t lapic_read_id(void) {
   return read(LAPIC_ID) >> 24;
 }
