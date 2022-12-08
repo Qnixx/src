@@ -3,7 +3,6 @@
 sys/kernel.sys
 buildcc/
 cross/
-dump.dat
 configure/
 limine/
 autom4te.cache/
