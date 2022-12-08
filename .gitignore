@@ -4,8 +4,6 @@ sys/kernel.sys
 buildcc/
 cross/
 dump.dat
-*.a
-*.EFI
 configure/
 limine/
 autom4te.cache/
